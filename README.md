@@ -2,5 +2,5 @@
 
 based on the monopoly deal game
 
-Bleu Sancez - test push
+Bleu Sanchez - test push
 Stephen Syl-Akinwale - test push
