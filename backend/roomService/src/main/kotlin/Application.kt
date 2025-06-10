@@ -1,4 +1,4 @@
-package com
+package com.roomservice
 
 import io.ktor.server.application.*
 
@@ -7,6 +7,8 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    configureHTTP()
     configureSerialization()
+    configureAdministration()
     configureRouting()
 }

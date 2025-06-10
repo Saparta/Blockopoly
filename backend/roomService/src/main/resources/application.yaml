@@ -1,6 +1,6 @@
 ktor:
   application:
     modules:
-      - com.ApplicationKt.module
+      - com.roomservice.ApplicationKt.module
   deployment:
     port: 8080

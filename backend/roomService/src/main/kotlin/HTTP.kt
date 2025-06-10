@@ -15,5 +15,21 @@ import io.ktor.server.routing.*
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
-fun Application.configureRouting() {
+fun Application.configureHTTP() {
+    install(SimpleCache) {
+        redisCache {
+            invalidateAt = 10.seconds
+            host = "localhost"
+            port = 6379
+        }
+    }
+    install(CORS) {
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Delete)
+        allowMethod(HttpMethod.Patch)
+        allowHeader(HttpHeaders.Authorization)
+        allowHeader("MyCustomHeader")
+        anyHost() // @TODO: Don't do this in production if possible. Try to limit it.
+    }
 }

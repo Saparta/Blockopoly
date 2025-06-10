@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10"
 }
 
-group = "com"
+group = "com.roomservice"
 version = "0.0.1"
 
 application {
@@ -16,12 +16,17 @@ application {
 
 repositories {
     mavenCentral()
+    maven { url = uri("https://packages.confluent.io/maven/") }
 }
 
 dependencies {
     implementation("io.ktor:ktor-server-core")
+    implementation("com.ucasoft.ktor:ktor-simple-cache:0.53.4")
+    implementation("com.ucasoft.ktor:ktor-simple-redis-cache:0.53.4")
     implementation("io.ktor:ktor-server-content-negotiation")
     implementation("io.ktor:ktor-serialization-kotlinx-json")
+    implementation("io.github.flaxoos:ktor-server-rate-limiting:2.2.1")
+    implementation("io.ktor:ktor-server-cors")
     implementation("io.ktor:ktor-server-netty")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-config-yaml")

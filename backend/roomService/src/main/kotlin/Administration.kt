@@ -15,5 +15,16 @@ import io.ktor.server.routing.*
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
-fun Application.configureRouting() {
+fun Application.configureAdministration() {
+    routing {
+        route("/") {
+            install(RateLimiting) {
+                rateLimiter {
+                    type = TokenBucket::class
+                    capacity = 100
+                    rate = 10.seconds
+                }
+            }
+        }
+    }
 }

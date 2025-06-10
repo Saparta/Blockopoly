@@ -16,8 +16,12 @@ Here's a list of features included in this project:
 | Name                                                                   | Description                                                                        |
 | ------------------------------------------------------------------------|------------------------------------------------------------------------------------ |
 | [Routing](https://start.ktor.io/p/routing)                             | Provides a structured routing DSL                                                  |
+| [Simple Cache](https://start.ktor.io/p/simple-cache)                   | Provides API for cache management                                                  |
+| [Simple Redis Cache](https://start.ktor.io/p/simple-redis-cache)       | Provides Redis cache for Simple Cache plugin                                       |
 | [Content Negotiation](https://start.ktor.io/p/content-negotiation)     | Provides automatic content conversion according to Content-Type and Accept headers |
 | [kotlinx.serialization](https://start.ktor.io/p/kotlinx-serialization) | Handles JSON serialization using kotlinx.serialization library                     |
+| [Rate Limiting](https://start.ktor.io/p/ktor-server-rate-limiting)     | Manage request rate limiting as you see fit                                        |
+| [CORS](https://start.ktor.io/p/cors)                                   | Enables Cross-Origin Resource Sharing (CORS)                                       |
 
 ## Building & Running
 
