@@ -28,3 +28,14 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
+
+jib {
+    to {
+        image = "blockopoply/roomservice"
+    }
+    container {
+        creationTime.set("USE_CURRENT_TIMESTAMP")
+    }
+}
+
+
