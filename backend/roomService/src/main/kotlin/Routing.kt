@@ -6,9 +6,9 @@ import io.ktor.server.routing.routing
 
 fun Application.configureRouting() {
     routing {
-        post("/createRoom") {  }
-        post("/joinRoom/{id}") {  }
-        post("/leaveRoom/{id}") {  }
-        post("/closeRoom/{id}") {  }
+        post("/createRoom") { createRoomHandler(call) }
+        post("/joinRoom/{id}") { joinRoomHandler(call) }
+        post("/leaveRoom/{id}") { leaveRoomHandler(call)  }
+        post("/closeRoom/{id}") { closeRoomHandler(call) }
     }
 }
