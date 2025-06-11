@@ -23,6 +23,7 @@ dependencies {
     implementation("io.ktor:ktor-server-core")
     implementation("com.ucasoft.ktor:ktor-simple-cache:0.53.4")
     implementation("com.ucasoft.ktor:ktor-simple-redis-cache:0.53.4")
+    implementation("io.lettuce:lettuce-core:6.7.1.RELEASE")
     implementation("io.ktor:ktor-server-content-negotiation")
     implementation("io.ktor:ktor-serialization-kotlinx-json")
     implementation("io.github.flaxoos:ktor-server-rate-limiting:2.2.1")
@@ -30,6 +31,7 @@ dependencies {
     implementation("io.ktor:ktor-server-netty")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-config-yaml")
+    implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
