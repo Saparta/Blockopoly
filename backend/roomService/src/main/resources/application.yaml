@@ -2,5 +2,8 @@ ktor:
   application:
     modules:
       - com.roomservice.ApplicationKt.module
+  redis:
+    host: "redis"
+    port: 6379
   deployment:
     port: 8080

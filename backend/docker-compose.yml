@@ -1,0 +1,30 @@
+version: '3.8' # Specify the Docker Compose file format version
+
+services:
+  # Redis Service
+  redis:
+    image: redis:7-alpine
+    restart: always       # Always restart the container if it stops
+    ports:
+      - "6379:6379"     # Map host port 6379 to container port 6379
+    volumes:
+      - redis_data:/data # Persist Redis data to a named volume
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+      start_period: 2s
+
+  room-service:
+    build: ./roomservice
+    ports:
+      - "8080:8080"      # Map host port 8080 to container port 8080
+    environment:
+      KTOR_REDIS_HOST: redis
+      KTOR_REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
+volumes:
+  redis_data: # Define the named volume for Redis data persistence

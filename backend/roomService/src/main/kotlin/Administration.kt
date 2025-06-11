@@ -12,10 +12,13 @@ import io.lettuce.core.api.async.RedisAsyncCommands
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.server.application.ApplicationStopping
 
-val dotenv = dotenv()
-val LettuceRedisClientKey = AttributeKey<RedisClient>(dotenv["LettuceRedisClient"])
-val LettuceRedisConnectionKey = AttributeKey<StatefulRedisConnection<String, String>>(dotenv["LettuceRedisConnection"])
-val LettuceRedisAsyncCommandsKey = AttributeKey<RedisAsyncCommands<String, String>>(dotenv["LettuceRedisAsyncCommands"])
+private val env = dotenv {
+    directory = "."
+}
+val LettuceRedisClientKey = AttributeKey<RedisClient>(env["REDIS_CLIENT"])
+val LettuceRedisConnectionKey = AttributeKey<StatefulRedisConnection<String, String>>(env["REDIS_CONNECTION_KEY"])
+val LettuceRedisAsyncCommandsKey = AttributeKey<RedisAsyncCommands<String, String>>(env["REDIS_ASYNC_COMMANDS_KEY"])
+
 
 fun Application.configureAdministration() {
     install(RateLimiting) {
@@ -24,8 +27,9 @@ fun Application.configureAdministration() {
             capacity = 2
             rate = 10.seconds}
     }
-    val redisHost = dotenv["REDIS_HOST"] ?: "localhost"
-    val redisPort = dotenv["REDIS_PORT"] ?: 6379
+
+    val redisHost = environment.config.propertyOrNull("ktor.redis.host")?.getString() ?: "localhost"
+    val redisPort = environment.config.propertyOrNull("ktor.redis.port")?.getString()?.toIntOrNull() ?: 6379
     val redisUri = "redis://$redisHost:$redisPort"
 
     val redisClient = RedisClient.create(redisUri)
