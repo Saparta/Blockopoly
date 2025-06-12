@@ -1,7 +1,6 @@
 package com.roomservice
 
-import io.github.flaxoos.ktor.server.plugins.ratelimiter.RateLimiting
-import io.github.flaxoos.ktor.server.plugins.ratelimiter.implementations.TokenBucket
+import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.util.AttributeKey
@@ -10,7 +9,10 @@ import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.async.RedisAsyncCommands
 import io.github.cdimascio.dotenv.dotenv
+import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.ApplicationStopping
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.origin
 
 private val env = dotenv {
     directory = "."
@@ -21,13 +23,16 @@ val LettuceRedisAsyncCommandsKey = AttributeKey<RedisAsyncCommands<String, Strin
 
 
 fun Application.configureAdministration() {
-    install(RateLimiting) {
-        rateLimiter {
-            type = TokenBucket::class
-            capacity = 2
-            rate = 10.seconds}
+    install(ContentNegotiation) {
+        json()
     }
 
+    install(RateLimit) {
+        global {
+            rateLimiter(limit = 2, refillPeriod = 10.seconds)
+            requestKey { applicationCall -> applicationCall.request.origin.remoteHost }
+        }
+    }
     val redisHost = environment.config.propertyOrNull("ktor.redis.host")?.getString() ?: "localhost"
     val redisPort = environment.config.propertyOrNull("ktor.redis.port")?.getString()?.toIntOrNull() ?: 6379
     val redisUri = "redis://$redisHost:$redisPort"

@@ -21,11 +21,10 @@ repositories {
 
 dependencies {
     implementation("io.ktor:ktor-server-core")
-    implementation("com.ucasoft.ktor:ktor-simple-cache:0.53.4")
-    implementation("com.ucasoft.ktor:ktor-simple-redis-cache:0.53.4")
     implementation("io.lettuce:lettuce-core:6.7.1.RELEASE")
     implementation("io.ktor:ktor-server-content-negotiation")
     implementation("io.ktor:ktor-serialization-kotlinx-json")
+    implementation("io.ktor:ktor-server-rate-limit:3.1.3")
     implementation("io.github.flaxoos:ktor-server-rate-limiting:2.2.1")
     implementation("io.ktor:ktor-server-cors")
     implementation("io.ktor:ktor-server-netty")
