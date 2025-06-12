@@ -1,4 +1,4 @@
-package com.roomservice
+package com.roomservice.routes
 
 import com.roomservice.Constants.JOIN_CODE_ALPHABET
 import com.roomservice.Constants.JOIN_CODE_TO_ROOM_PREFIX
@@ -6,6 +6,7 @@ import com.roomservice.Constants.PLAYER_TO_ROOM_PREFIX
 import com.roomservice.Constants.ROOM_DATA_TTL
 import com.roomservice.Constants.ROOM_TO_JOIN_CODE_PREFIX
 import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
+import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
@@ -51,16 +52,4 @@ suspend fun createRoomHandler(call: ApplicationCall) {
             ROOM_TO_JOIN_CODE_PREFIX + roomID)
         call.respond(HttpStatusCode.InternalServerError, "Failed to create room")
     }
-}
-
-suspend fun joinRoomHandler(call: ApplicationCall) {
-    call.application.environment.log.info("the room has been joined")
-}
-
-suspend fun leaveRoomHandler(call: ApplicationCall) {
-    call.application.environment.log.info("the room has been leaved")
-}
-
-suspend fun closeRoomHandler(call: ApplicationCall) {
-    call.application.environment.log.info("the room has been closed")
 }
