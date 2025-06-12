@@ -7,6 +7,10 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10"
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 group = "com.roomservice"
 version = "0.0.1"
 
@@ -24,10 +28,11 @@ dependencies {
     implementation("io.lettuce:lettuce-core:6.7.1.RELEASE")
     implementation("io.ktor:ktor-server-content-negotiation")
     implementation("io.ktor:ktor-serialization-kotlinx-json")
-    implementation("io.ktor:ktor-server-rate-limit:3.1.3")
-    implementation("io.ktor:ktor-server-status-pages:3.1.3")
+    implementation("io.ktor:ktor-server-rate-limit:$kotlin_version")
+    implementation("io.ktor:ktor-server-status-pages:$kotlin_version")
     implementation("io.ktor:ktor-server-cors")
     implementation("io.ktor:ktor-server-netty")
+    implementation("io.viascom.nanoid:nanoid:1.0.1")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-config-yaml")
     implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
