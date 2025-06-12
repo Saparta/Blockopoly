@@ -1,26 +1,19 @@
 package com.roomservice
 
-import io.ktor.server.plugins.ratelimit.*
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
-import io.ktor.util.AttributeKey
 import kotlin.time.Duration.Companion.seconds
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.async.RedisAsyncCommands
-import io.github.cdimascio.dotenv.dotenv
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.origin
-
-private val env = dotenv {
-    directory = "."
-}
-val LettuceRedisClientKey = AttributeKey<RedisClient>(env["REDIS_CLIENT"])
-val LettuceRedisConnectionKey = AttributeKey<StatefulRedisConnection<String, String>>(env["REDIS_CONNECTION_KEY"])
-val LettuceRedisAsyncCommandsKey = AttributeKey<RedisAsyncCommands<String, String>>(env["REDIS_ASYNC_COMMANDS_KEY"])
-
+import io.ktor.server.plugins.ratelimit.RateLimit
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.response.respondText
 
 fun Application.configureAdministration() {
     install(ContentNegotiation) {
@@ -30,9 +23,17 @@ fun Application.configureAdministration() {
     install(RateLimit) {
         global {
             rateLimiter(limit = 2, refillPeriod = 10.seconds)
-            requestKey { applicationCall -> applicationCall.request.origin.remoteHost }
+            requestKey { applicationCall -> applicationCall.request.origin.remoteAddress }
         }
     }
+
+    install(StatusPages) {
+        status(HttpStatusCode.TooManyRequests) { call, status ->
+            val retryAfter = call.response.headers["Retry-After"]
+            call.respondText(text = "429: Too many requests. Wait for $retryAfter seconds.", status = status)
+        }
+    }
+
     val redisHost = environment.config.propertyOrNull("ktor.redis.host")?.getString() ?: "localhost"
     val redisPort = environment.config.propertyOrNull("ktor.redis.port")?.getString()?.toIntOrNull() ?: 6379
     val redisUri = "redis://$redisHost:$redisPort"
@@ -41,9 +42,9 @@ fun Application.configureAdministration() {
     val connection: StatefulRedisConnection<String, String> = redisClient.connect()
     val asyncCommands: RedisAsyncCommands<String, String> = connection.async()
 
-    attributes.put(LettuceRedisClientKey, redisClient)
-    attributes.put(LettuceRedisConnectionKey, connection)
-    attributes.put(LettuceRedisAsyncCommandsKey, asyncCommands)
+    attributes.put(LETTUCE_REDIS_CLIENT_KEY, redisClient)
+    attributes.put(LETTUCE_REDIS_CONNECTION_KEY, connection)
+    attributes.put(LETTUCE_REDIS_COMMANDS_KEY, asyncCommands)
 
     monitor.subscribe(ApplicationStopping) {
         connection.close()
