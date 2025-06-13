@@ -17,7 +17,7 @@ import kotlinx.serialization.Serializable
 import java.util.UUID
 
 @Serializable
-data class JoinRoomRequest(val userName: String)
+data class JoinRoomRequest(val name: String)
 
 @Serializable
 data class JoinRoomResponse(val playerID: String, val name: String, val roomId: String, val roomCode: String)
@@ -28,7 +28,7 @@ suspend fun joinRoomHandler(call: ApplicationCall) {
             HttpStatusCode.BadRequest,
             JoinRoomResponse(roomId = "", roomCode = "", playerID = "", name = ""))
     val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
-    val userName = call.receive<JoinRoomRequest>().userName
+    val userName = call.receive<JoinRoomRequest>().name
     val roomID = redis.get(JOIN_CODE_TO_ROOM_PREFIX + roomCode).await()
     if (roomID == null) {
         call.respond(HttpStatusCode.NotFound, JoinRoomResponse(
