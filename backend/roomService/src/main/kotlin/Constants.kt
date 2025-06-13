@@ -15,6 +15,7 @@ val LETTUCE_REDIS_CONNECTION_KEY = AttributeKey<StatefulRedisConnection<String, 
 val LETTUCE_REDIS_COMMANDS_KEY = AttributeKey<RedisAsyncCommands<String, String>>(env["REDIS_ASYNC_COMMANDS_KEY"])
 object Constants {
     const val JOIN_CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnopqrstuvwxyz"
+    const val PLAYER_TO_NAME_PREFIX = "v1:p2n:"
     const val PLAYER_TO_ROOM_PREFIX = "v1:p2r:"
     const val ROOM_TO_PLAYERS_PREFIX = "v1:r2p:"
     const val JOIN_CODE_TO_ROOM_PREFIX = "v1:j2r:"
