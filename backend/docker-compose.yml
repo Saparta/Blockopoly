@@ -1,5 +1,3 @@
-version: '3.8' # Specify the Docker Compose file format version
-
 services:
   # Redis Service
   redis:
