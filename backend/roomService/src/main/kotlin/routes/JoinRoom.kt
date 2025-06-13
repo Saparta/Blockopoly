@@ -1,11 +1,11 @@
 package com.roomservice.routes
 
+import com.roomservice.Constants
 import com.roomservice.Constants.JOIN_CODE_TO_ROOM_PREFIX
 import com.roomservice.Constants.MAX_PLAYERS
 import com.roomservice.Constants.PLAYER_TO_ROOM_PREFIX
 import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
-import com.roomservice.ROOM_FULL_STATUS
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
@@ -41,7 +41,7 @@ suspend fun joinRoomHandler(call: ApplicationCall) {
             if (numPlayers >= MAX_PLAYERS) {
                 redis.unwatch().await()
                 return call.respond(
-                    ROOM_FULL_STATUS, JoinRoomResponse(
+                    Constants.ROOM_FULL_STATUS, JoinRoomResponse(
                         roomId = "",
                         roomCode = "",
                         playerID = ""

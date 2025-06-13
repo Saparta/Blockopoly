@@ -1,5 +1,6 @@
 package com.roomservice.routes
 
+import com.roomservice.Constants
 import com.roomservice.Constants.JOIN_CODE_ALPHABET
 import com.roomservice.Constants.JOIN_CODE_TO_ROOM_PREFIX
 import com.roomservice.Constants.PLAYER_TO_ROOM_PREFIX
@@ -12,6 +13,7 @@ import io.ktor.server.response.respond
 import io.viascom.nanoid.NanoId
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.future.asDeferred
+import kotlinx.coroutines.future.await
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
@@ -27,19 +29,32 @@ suspend fun createRoomHandler(call: ApplicationCall) {
 
     val roomFuture = redis.lpush(ROOM_TO_PLAYERS_PREFIX + roomID, hostID).asDeferred()
 
-    val code = NanoId.generate(6, JOIN_CODE_ALPHABET)
-    val codeFuture = redis.set(JOIN_CODE_TO_ROOM_PREFIX + code,roomID).asDeferred()
+    val maxRetries = 3
+    var genCodeAttempts = 0
+    var successfulCode = false
+    var code = NanoId.generate(Constants.JOIN_CODE_SIZE, JOIN_CODE_ALPHABET)
+    while (!successfulCode && genCodeAttempts < maxRetries) {
+        genCodeAttempts++
+        val codeFuture = redis.setnx(JOIN_CODE_TO_ROOM_PREFIX + code,roomID).await()
+        if (codeFuture) {
+            successfulCode = true
+        } else {
+            code = NanoId.generate(Constants.JOIN_CODE_SIZE, JOIN_CODE_ALPHABET)
+        }
+    }
+    if (!successfulCode) {
+        return call.respond(HttpStatusCode.InternalServerError, JoinRoomResponse("", "", ""))
+    }
 
     val roomToCodeFuture = redis.set(ROOM_TO_JOIN_CODE_PREFIX + roomID, code).asDeferred()
 
-    val (hostStatus, roomStatus, codeStatus, roomToCodeStatus) = awaitAll(
+    val (hostStatus, roomStatus, roomToCodeStatus) = awaitAll(
         hostFuture,
         roomFuture,
-        codeFuture,
         roomToCodeFuture
     )
 
-    if (null !in arrayOf(hostStatus, codeStatus, roomToCodeStatus) && roomStatus == 1L) {
+    if (null !in arrayOf(hostStatus, roomToCodeStatus) && roomStatus == 1L) {
         return call.respond(
             HttpStatusCode.OK,
             CreateRoomResponse(
