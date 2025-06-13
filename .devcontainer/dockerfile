@@ -1,0 +1,15 @@
+FROM node:20-bookworm
+
+# Update and upgrade system packages to reduce vulnerabilities
+RUN apt-get update && apt-get upgrade -y
+
+# Create app directory
+WORKDIR /workspace/frontend
+
+# Install global tools
+RUN npm install -g vite
+
+# Optional: install dumb-x11 for GUI
+RUN apt-get update && apt-get install -y dumb-init libx11-dev libxext-dev libxrender-dev libxtst-dev libnss3 libatk-bridge2.0-0 libgtk-3-0
+
+CMD [ "bash" ]
