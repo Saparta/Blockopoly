@@ -12,7 +12,7 @@ const Lobby = () => {
   const [isFull, setIsFull] = useState(false);
 
   const currentUser = localStorage.getItem("name");
-  const isHost = currentUser === host;
+  const isHost = true;
 
   const handleLeaveRoom = () => {
     navigate("/main");

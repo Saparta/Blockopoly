@@ -49,18 +49,18 @@ body {
 
 .primary-button,
 .secondary-button {
+  position: relative;
   width: 140px;
-  padding: 12px 20px;
+  padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 12px;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  color: white;
 }
 
 .primary-button {
   background-color: #ff7f50;
-  color: white;
 }
 
 .primary-button:hover {
@@ -69,7 +69,6 @@ body {
 
 .secondary-button {
   background-color: #6c63ff;
-  color: white;
 }
 
 .secondary-button:hover {
