@@ -50,9 +50,9 @@ const Lobby = () => {
         <ol className="player-list">
           {players.map((player, i) => (
             <li key={i} className="player-slot">
-              {player.name === host ? "👑 " : ""}
+              {isHost ? "👑 " : ""}
               {player.name}
-              {player.name === host && <span className="host-label"> (Host)</span>}
+              {isHost && <span className="host-label"> (Host)</span>}
             </li>
           ))}
         </ol>
