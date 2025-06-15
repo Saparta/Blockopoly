@@ -28,8 +28,8 @@ dependencies {
     implementation("io.lettuce:lettuce-core:6.7.1.RELEASE")
     implementation("io.ktor:ktor-server-content-negotiation")
     implementation("io.ktor:ktor-serialization-kotlinx-json")
-    implementation("io.ktor:ktor-server-rate-limit:$kotlin_version")
-    implementation("io.ktor:ktor-server-status-pages:$kotlin_version")
+    implementation("io.ktor:ktor-server-rate-limit:3.1.3")
+    implementation("io.ktor:ktor-server-status-pages:3.1.3")
     implementation("io.ktor:ktor-server-cors")
     implementation("io.ktor:ktor-server-netty")
     implementation("io.viascom.nanoid:nanoid:1.0.1")
@@ -37,6 +37,7 @@ dependencies {
     implementation("io.ktor:ktor-server-config-yaml")
     implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.10.2")
+    implementation("io.ktor:ktor-server-sse:3.1.3")
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

@@ -1,23 +1,28 @@
 package com.roomservice
 
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.Application
-import io.ktor.server.application.install
-import kotlin.time.Duration.Companion.seconds
-import io.lettuce.core.RedisClient
-import io.lettuce.core.api.StatefulRedisConnection
-import io.lettuce.core.api.async.RedisAsyncCommands
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopping
+import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.origin
 import io.ktor.server.plugins.ratelimit.RateLimit
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respondText
+import io.ktor.server.sse.SSE
+import io.lettuce.core.RedisClient
+import io.lettuce.core.api.StatefulRedisConnection
+import io.lettuce.core.api.async.RedisAsyncCommands
+import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureAdministration() {
     install(ContentNegotiation) {
         json()
+    }
+
+    install(SSE) {
+        
     }
 
     install(RateLimit) {

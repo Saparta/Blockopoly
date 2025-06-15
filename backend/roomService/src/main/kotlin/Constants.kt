@@ -23,4 +23,9 @@ object Constants {
     const val JOIN_CODE_SIZE = 6
     const val MAX_PLAYERS = 5
     val ROOM_FULL_STATUS = HttpStatusCode(420, "Room full")
+    enum class RoomBroadcastType {
+        JOIN,
+        LEAVE,
+        CLOSED,
+    }
 }

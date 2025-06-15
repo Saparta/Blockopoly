@@ -32,7 +32,7 @@ suspend fun createRoomHandler(call: ApplicationCall) {
     val roomID = UUID.randomUUID().toString()
 
     val hostFuture = redis.set(PLAYER_TO_ROOM_PREFIX + hostID, roomID).asDeferred()
-    val nameFuture = redis.set(PLAYER_TO_NAME_PREFIX + userName, hostID).asDeferred()
+    val nameFuture = redis.set(PLAYER_TO_NAME_PREFIX + hostID, userName).asDeferred()
     val roomFuture = redis.lpush(ROOM_TO_PLAYERS_PREFIX + roomID, hostID).asDeferred()
 
     val maxRetries = 3
