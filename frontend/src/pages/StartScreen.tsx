@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import FallingBricks from "../components/FallingBricks";
 import logo from "../assets/blockopoly-logo.svg";
 import { PrimaryButton } from "../components/startbutton";
@@ -10,8 +11,11 @@ type Props = {
 };
 
 export const StartScreen: React.FC<Props> = ({ onStart }) => {
+  const navigate = useNavigate();
+
   const handleClick = () => {
     new Audio(clickSound).play();
+    navigate("/main");
     setTimeout(() => {
       onStart();
     }, 600);
