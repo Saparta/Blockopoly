@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import { StartScreen } from "./pages/StartScreen";
 import GameScreen from "./pages/Mainmenu";
+import PlayScreen from "./pages/PlayScreen"
 import Lobby from "./pages/Lobby";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -45,6 +46,8 @@ function App() {
               </AnimatedRoute>
             }
           />
+          <Route path="/game/:joinId"
+            element={<PlayScreen />} />
         </Routes>
       </AnimatePresence>
     </Router>

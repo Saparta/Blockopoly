@@ -12,7 +12,7 @@ const Lobby = () => {
   const [isFull, setIsFull] = useState(false);
 
   const currentUser = localStorage.getItem("name");
-  const isHost = true;
+  const isHost = currentUser === host;
 
   const handleLeaveRoom = () => {
     navigate("/main");
@@ -33,7 +33,7 @@ const Lobby = () => {
   }, [roomPin]);
 
   const handleStartGame = () => {
-    navigate("/start")
+    navigate("/game")
     console.log("Game starting...");
   };
 
