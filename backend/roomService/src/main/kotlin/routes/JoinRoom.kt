@@ -58,7 +58,7 @@ suspend fun joinRoomHandler(call: ApplicationCall) {
         val playerID = UUID.randomUUID().toString()
         val successfulUpdate = updateDatastore(playerID, userName, roomID, call, redis)
         if (successfulUpdate.first) {
-            redis.publish(roomID,
+            redis.publish(roomCode,
                     RoomBroadcast(
                         Constants.RoomBroadcastType.JOIN,
                         JoinRoomBroadcast(playerID, userName).toString()

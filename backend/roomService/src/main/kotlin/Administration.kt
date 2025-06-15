@@ -21,9 +21,7 @@ fun Application.configureAdministration() {
         json()
     }
 
-    install(SSE) {
-        
-    }
+    install(SSE) {}
 
     install(RateLimit) {
         global {

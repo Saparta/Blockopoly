@@ -17,6 +17,6 @@ fun Application.configureRouting() {
         post("/joinRoom/{roomCode}") { joinRoomHandler(call) }
         post("/leaveRoom/{playerId}") { leaveRoomHandler(call) }
         post("/closeRoom/{roomId}") { closeRoomHandler(call) }
-        sse("/room/{roomId}") { roomConnect(call, this) }
+        sse("/room/{roomCode}") { roomConnect(call, this) }
     }
 }
