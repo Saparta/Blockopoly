@@ -1,26 +1,27 @@
 {
-  "name": "frontend",
+  "name": "app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"vite\" \"npm:electron-dev\"",
-    "electron-dev": "wait-on http://localhost:5173 && electron .",
+    "dev": "concurrently \"vite --host\" \"npm run electron-dev\"",
+    "electron-dev": "wait-on http://localhost:5173 && electron --no-sandbox electron-main.cjs",
     "build": "vite build && electron-builder",
-    "start": "electron ."
+    "start": "electron electron-main.ts"
   },
   "dependencies": {
+    "framer-motion": "^12.18.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@types/node": "^24.0.1",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
     "concurrently": "^9.1.2",
     "electron": "^36.4.0",
-    "electron-builder": "^26.0.12",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",

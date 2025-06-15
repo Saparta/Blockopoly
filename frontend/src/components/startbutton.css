@@ -1,0 +1,107 @@
+.button-container {
+  position: relative;
+  display: inline-block;
+}
+
+.primary-button {
+  padding: 1rem 2rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(135deg, #ff8800, #ff2e63);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.primary-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(255, 136, 0, 0.6);
+}
+
+.primary-button:active {
+  animation: pulse 0.3s ease;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0px rgba(255, 255, 255, 0.8);
+  }
+  50% {
+    transform: scale(0.95);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0px rgba(255, 255, 255, 0);
+  }
+}
+
+.brick-piece {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #ff8800;
+  border-radius: 2px;
+  animation: burst 0.6s ease-out forwards;
+  opacity: 0.9;
+  z-index: 0;
+}
+
+@keyframes burst {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--x), var(--y)) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* Random directions */
+.piece-0 {
+  --x: -40px;
+  --y: -60px;
+}
+.piece-1 {
+  --x: 30px;
+  --y: -80px;
+}
+.piece-2 {
+  --x: -25px;
+  --y: -50px;
+}
+.piece-3 {
+  --x: 50px;
+  --y: -20px;
+}
+.piece-4 {
+  --x: -45px;
+  --y: 30px;
+}
+.piece-5 {
+  --x: 60px;
+  --y: 40px;
+}
+.piece-6 {
+  --x: 0px;
+  --y: -90px;
+}
+.piece-7 {
+  --x: -60px;
+  --y: 10px;
+}
+.piece-8 {
+  --x: 35px;
+  --y: -40px;
+}
+.piece-9 {
+  --x: -20px;
+  --y: 60px;
+}

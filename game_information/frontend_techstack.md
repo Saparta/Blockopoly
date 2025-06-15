@@ -28,3 +28,5 @@
 | Backend      | Kotlin                         |
 
 ---
+
+to launch the app 'npm run dev'
