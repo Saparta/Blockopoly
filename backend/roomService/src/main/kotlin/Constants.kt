@@ -27,5 +27,6 @@ object Constants {
         JOIN,
         LEAVE,
         CLOSED,
+        HOST,
     }
 }

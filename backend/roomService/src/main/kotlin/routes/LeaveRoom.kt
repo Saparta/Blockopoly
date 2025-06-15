@@ -1,10 +1,10 @@
 package com.roomservice.routes
 
 import com.roomservice.Constants
-import com.roomservice.Constants.PLAYER_TO_ROOM_PREFIX
-import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
-import com.roomservice.Constants.ROOM_TO_JOIN_CODE_PREFIX
 import com.roomservice.Constants.PLAYER_TO_NAME_PREFIX
+import com.roomservice.Constants.PLAYER_TO_ROOM_PREFIX
+import com.roomservice.Constants.ROOM_TO_JOIN_CODE_PREFIX
+import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
@@ -57,7 +57,7 @@ suspend fun leaveRoomHandler(call: ApplicationCall) {
 
     val numberRemaining = redis.llen(ROOM_TO_PLAYERS_PREFIX + roomID).await()
     if (numberRemaining == 0L) {
-        closeRoomHandler(call)
+        closeRoomHandler(call, playerID)
     }
 
     call.respond(HttpStatusCode.OK, message =  "$playerName has left the room.")

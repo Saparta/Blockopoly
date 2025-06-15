@@ -1,6 +1,10 @@
 package com.roomservice.routes
 
+import com.roomservice.Constants
+import com.roomservice.Constants.JOIN_CODE_TO_ROOM_PREFIX
+import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.LETTUCE_REDIS_CLIENT_KEY
+import com.roomservice.models.RoomBroadcast
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
@@ -28,7 +32,10 @@ suspend fun roomConnect(call: ApplicationCall, session: ServerSSESession) {
     }
 
     connection.addListener(listener)
+
     val redis = connection.async()
+    val hostPlayer = redis.lindex(ROOM_TO_PLAYERS_PREFIX + redis.get(JOIN_CODE_TO_ROOM_PREFIX + roomCode).await(), -1).await()
+    incoming.send(RoomBroadcast(Constants.RoomBroadcastType.HOST, hostPlayer).toString())
     redis.subscribe(roomCode).await()
 
     try {
