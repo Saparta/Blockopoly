@@ -12,39 +12,29 @@ const MainMenu = () => {
   const isValidName = name.trim().length > 0 && name.trim().length <= 28;
   const isValidPin = /^[a-zA-Z0-9]{6}$/.test(roomPin);
 
-  // const handleJoin = async () => {
-  //   if (!isValidName || !isValidPin) {
-  //     setError("Please enter a valid name and 6-character room pin.");
-  //     return;
-  //   }
-
-  //   try {
-  //     const res = await fetch("http://localhost:8080/join-room", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ name, roomPin }),
-  //     });
-
-  //     if (!res.ok) {
-  //       setError("Room not found or server error.");
-  //     } else {
-  //       console.log("Joined room!");
-  //       navigate(`/lobby/${roomPin}`);
-  //       // Transition to game room here
-  //     }
-  //   } catch (err) {
-  //     setError("Failed to connect to server.");
-  //   }
-  // };
-
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!isValidName || !isValidPin) {
       setError("Please enter a valid name and 6-character room pin.");
       return;
     }
 
-    // Temporarily bypass server call
-    navigate(`/lobby/${roomPin}`);
+    try {
+      const res = await fetch("http://localhost:8080/join-room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, roomPin }),
+      });
+
+      if (!res.ok) {
+        setError("Room not found or server error.");
+      } else {
+        console.log("Joined room!");
+        navigate(`/lobby/${roomPin}`);
+        // Transition to game room here
+      }
+    } catch (err) {
+      setError("Failed to connect to server.");
+    }
   };
 
   const handleCreate = async () => {
