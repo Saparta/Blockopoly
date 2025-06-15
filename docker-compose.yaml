@@ -1,9 +1,18 @@
+# docker-compose.yml  (root)
 
 include:
   - ./backend/docker-compose.yml
 
 services:
-  app:
-    build: ./frontend
+  frontend:
+    build:
+      context: ./frontend
     ports:
-      - "5174:5174"
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app # hot-reload
+    environment:
+      # Browser hits backend via host port
+      - VITE_API_BASE=http://localhost:8080
+    depends_on:
+      - room-service

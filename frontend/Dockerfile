@@ -1,16 +1,15 @@
-# Dockerfile
 FROM node:20-bookworm
 
-# Update and upgrade system packages to reduce vulnerabilities
-RUN apt-get update && apt-get upgrade -y
+# Set working directory
+WORKDIR /frontend
 
-# Set the working directory inside the container
-WORKDIR /src
+# Copy package.json files first
+COPY package*.json ./
 
-# Install global tools
-RUN npm install -g vite
+# Install Node dependencies
+RUN npm install
 
-# mandatory: Install GUI dependencies (for Electron later)
+# Install GUI dependencies (for Electron)
 RUN apt-get update && apt-get install -y \
   dumb-init \
   libx11-dev \
@@ -27,7 +26,16 @@ RUN apt-get update && apt-get install -y \
   libxdamage1 \
   libxrandr2 \
   libxfixes3 \
-  libxkbcommon0
+  libxkbcommon0 \
+  xvfb
+
+# Copy ALL app source code, including folders like src/assets/
+COPY . .
 
 
-CMD [ "bash" ]
+# Expose port for Vite
+EXPOSE 5173
+
+# Start the dev server (with GUI for Electron)
+# container runs web-only script
+CMD ["npm", "run", "dev:web"]

@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import FallingBricks from "../components/FallingBricks";
-import logo from "../assets/blockopoly-logo.svg";
+import logo from "../assets/Blockopoly-logo.svg";
 import { PrimaryButton } from "../components/startbutton";
 import clickSound from "../assets/click.mp3";
 import "../style/StartScreen.css";

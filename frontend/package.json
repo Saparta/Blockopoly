@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"vite --host\" \"npm run electron-dev\"",
+    "dev:desktop": "concurrently \"vite --host\" \"npm run electron-dev\"",
+    "dev:web": "vite --host",
     "electron-dev": "wait-on http://localhost:5173 && electron --no-sandbox electron-main.cjs",
     "build": "vite build && electron-builder",
     "start": "electron electron-main.ts"

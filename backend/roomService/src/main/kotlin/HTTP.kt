@@ -11,6 +11,7 @@ fun Application.configureHTTP() {
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Delete)
+        allowHeader(HttpHeaders.ContentType)
         allowMethod(HttpMethod.Patch)
         allowHeader(HttpHeaders.Authorization)
         allowHeader("MyCustomHeader")
