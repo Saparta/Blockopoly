@@ -5,7 +5,7 @@ FROM node:20-bookworm
 RUN apt-get update && apt-get upgrade -y
 
 # Set the working directory inside the container
-WORKDIR /app
+WORKDIR /src
 
 # Install global tools
 RUN npm install -g vite
