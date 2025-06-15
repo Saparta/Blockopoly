@@ -1,0 +1,9 @@
+
+include:
+  - ./backend/docker-compose.yml
+
+services:
+  app:
+    build: ./frontend
+    ports:
+      - "5174:5174"
