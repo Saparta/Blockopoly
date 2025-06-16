@@ -10,9 +10,7 @@ import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
 import com.roomservice.PUBSUB_MANAGER_KEY
 import com.roomservice.util.forwardSSe
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import io.ktor.server.sse.ServerSSESession
 import io.viascom.nanoid.NanoId
 import kotlinx.coroutines.awaitAll
@@ -28,7 +26,11 @@ data class CreateRoomResponse(val playerID: String = "", val name: String = "", 
 suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession) {
     val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
     val pubSubManager = call.application.attributes[PUBSUB_MANAGER_KEY]
-    val userName = call.parameters["username"] ?: return call.respond(HttpStatusCode.BadRequest)
+    val userName = call.parameters["username"]
+    if (userName.isNullOrBlank()) {
+        session.send(Constants.ErrorType.BAD_REQUEST.toString(), Constants.RoomBroadcastType.ERROR.toString())
+        return session.close()
+    }
     val hostID = UUID.randomUUID().toString()
     val roomID = UUID.randomUUID().toString()
 
@@ -50,7 +52,8 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
         }
     }
     if (!successfulCode) {
-        return call.respond(HttpStatusCode.InternalServerError)
+        session.send(Constants.ErrorType.SERVICE_UNAVAILABLE.toString(), Constants.RoomBroadcastType.ERROR.toString())
+        return session.close()
     }
 
     val channel = pubSubManager.subscribe(code)
@@ -82,6 +85,7 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
             JOIN_CODE_TO_ROOM_PREFIX + code,
             ROOM_TO_JOIN_CODE_PREFIX + roomID
         )
-        return call.respond(HttpStatusCode.InternalServerError)
+        session.send(Constants.ErrorType.INTERNAL_SERVER_ERROR.toString(), Constants.RoomBroadcastType.ERROR.toString())
+        return session.close()
     }
 }

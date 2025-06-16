@@ -11,9 +11,7 @@ import com.roomservice.PUBSUB_MANAGER_KEY
 import com.roomservice.models.Player
 import com.roomservice.models.RoomBroadcast
 import com.roomservice.util.forwardSSe
-import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.response.respond
 import io.ktor.server.sse.ServerSSESession
 import io.lettuce.core.api.async.RedisAsyncCommands
 import kotlinx.coroutines.awaitAll
@@ -22,9 +20,6 @@ import kotlinx.coroutines.future.await
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.UUID
-
-@Serializable
-data class JoinRoomRequest(val name: String)
 
 @Serializable
 data class JoinRoomResponse(val playerID: String = "", val name: String = "", val roomId: String = "", val roomCode: String = "", val players: List<Player> = emptyList())
@@ -38,14 +33,21 @@ data class JoinRoomBroadcast(val playerID: String, val name: String) {
 
 suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
     val roomCode = call.parameters["roomCode"]
-        ?: return call.respond(HttpStatusCode.BadRequest)
+    if (roomCode.isNullOrBlank()) {
+        session.send(Constants.ErrorType.BAD_REQUEST.toString(), Constants.RoomBroadcastType.ERROR.toString())
+        return session.close()
+    }
+    val userName = call.parameters["username"]
+    if (userName.isNullOrBlank()) {
+        session.send(Constants.ErrorType.BAD_REQUEST.toString(), Constants.RoomBroadcastType.ERROR.toString())
+        return session.close()
+    }
     val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
     val pubSubManager = call.application.attributes[PUBSUB_MANAGER_KEY]
-    val userName = call.parameters["username"] ?: return call.respond(HttpStatusCode.BadRequest)
     val roomID = redis.get(JOIN_CODE_TO_ROOM_PREFIX + roomCode).await()
     if (roomID == null) {
-        call.respond(HttpStatusCode.NotFound)
-        return
+        session.send(Constants.ErrorType.ROOM_NOT_FOUND.toString(), Constants.RoomBroadcastType.ERROR.toString())
+        return session.close()
     }
 
     val maxRetry = 3
@@ -54,12 +56,13 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
         val numPlayers = redis.llen(ROOM_TO_PLAYERS_PREFIX + roomID).await()
         if (numPlayers >= MAX_PLAYERS) {
             redis.unwatch().await()
-            return call.respond(Constants.ROOM_FULL_STATUS)
+            session.send(Constants.ErrorType.ROOM_FULL.toString(), Constants.RoomBroadcastType.ERROR.toString())
+            return session.close()
         }
 
         val playerID = UUID.randomUUID().toString()
         val channel = pubSubManager.subscribe(roomCode)
-        val successfulUpdate = updateDatastore(playerID, userName, roomID, call, redis)
+        val successfulUpdate = updateDatastore(playerID, userName, roomID, redis, session)
         if (successfulUpdate.first) {
             redis.publish(roomCode,
                     RoomBroadcast(
@@ -86,10 +89,11 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
         }
         pubSubManager.unsubscribe(roomCode, channel)
      }
-    return call.respond(HttpStatusCode.ServiceUnavailable)
+    session.send(Constants.ErrorType.SERVICE_UNAVAILABLE.toString(), Constants.RoomBroadcastType.ERROR.toString())
+    return session.close()
 }
 
-suspend fun updateDatastore(playerID: String, userName: String, roomID: String, call: ApplicationCall, redis: RedisAsyncCommands<String, String>) : Pair<Boolean, List<String>> {
+suspend fun updateDatastore(playerID: String, userName: String, roomID: String, redis: RedisAsyncCommands<String, String>, session: ServerSSESession) : Pair<Boolean, List<String>> {
     redis.multi().await()
     redis.lpush(ROOM_TO_PLAYERS_PREFIX + roomID, playerID)
     redis.lrange(ROOM_TO_PLAYERS_PREFIX + roomID, 0, -1)
@@ -99,7 +103,7 @@ suspend fun updateDatastore(playerID: String, userName: String, roomID: String, 
 
     if ((transactionResult[1] as ArrayList<String>).firstOrNull() != playerID ||
         (transactionResult[2] as String?) == null) {
-            call.respond(HttpStatusCode.InternalServerError)
+            session.send(Constants.ErrorType.INTERNAL_SERVER_ERROR.toString(), Constants.RoomBroadcastType.ERROR.toString())
             redis.lrem(ROOM_TO_PLAYERS_PREFIX + roomID, 1, playerID)
             redis.del(PLAYER_TO_ROOM_PREFIX + playerID, PLAYER_TO_NAME_PREFIX + userName)
         return Pair(false, emptyList())

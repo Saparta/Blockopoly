@@ -4,7 +4,6 @@ import com.roomservice.routes.closeRoomHandler
 import com.roomservice.routes.createRoomHandler
 import com.roomservice.routes.joinRoomHandler
 import com.roomservice.routes.leaveRoomHandler
-import com.roomservice.routes.roomConnect
 import io.ktor.server.application.Application
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
@@ -29,6 +28,5 @@ fun Application.configureRouting() {
             call.application.environment.log.info("Room Close Begun")
             closeRoomHandler(call)
         }
-        sse("/room/{roomCode}") { roomConnect(call, this) }
     }
 }

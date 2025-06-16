@@ -1,7 +1,6 @@
 package com.roomservice
 
 import io.github.cdimascio.dotenv.dotenv
-import io.ktor.http.HttpStatusCode
 import io.ktor.util.AttributeKey
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
@@ -23,13 +22,20 @@ object Constants {
     const val ROOM_TO_JOIN_CODE_PREFIX = "v1:r2j:"
     const val JOIN_CODE_SIZE = 6
     const val MAX_PLAYERS = 5
-    val ROOM_FULL_STATUS = HttpStatusCode(420, "Room full")
     enum class RoomBroadcastType {
         INITIAL,
         JOIN,
         LEAVE,
         CLOSED,
         HOST,
+        ERROR,
+    }
+    enum class ErrorType {
+        BAD_REQUEST,
+        SERVICE_UNAVAILABLE,
+        INTERNAL_SERVER_ERROR,
+        ROOM_NOT_FOUND,
+        ROOM_FULL
     }
     const val ROOM_BROADCAST_TYPE_DELIMITER = "#"
     const val ROOM_BROADCAST_MSG_DELIMITER = ":"
