@@ -58,6 +58,7 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
         }
 
         val playerID = UUID.randomUUID().toString()
+        val channel = pubSubManager.subscribe(roomCode)
         val successfulUpdate = updateDatastore(playerID, userName, roomID, call, redis)
         if (successfulUpdate.first) {
             redis.publish(roomCode,
@@ -66,7 +67,6 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
                         JoinRoomBroadcast(playerID, userName).toString()
                 ).toString()
             )
-            val channel = pubSubManager.subscribe(roomCode)
             val playerNamesFuture = successfulUpdate.second.map {  redis.get(PLAYER_TO_NAME_PREFIX + it).asDeferred() }
 
             val players = playerNamesFuture.awaitAll().zip(successfulUpdate.second).map {
@@ -82,8 +82,9 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
             ), Constants.RoomBroadcastType.INITIAL.toString())
 
             session.send(players.last().playerId, Constants.RoomBroadcastType.HOST.toString())
-            forwardSSe(channel, roomCode, session, pubSubManager, playerID)
+            return forwardSSe(channel, roomCode, session, pubSubManager, playerID)
         }
+        pubSubManager.unsubscribe(roomCode, channel)
      }
     return call.respond(HttpStatusCode.ServiceUnavailable)
 }
