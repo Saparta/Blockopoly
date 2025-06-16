@@ -9,12 +9,11 @@ import com.roomservice.Constants.ROOM_TO_JOIN_CODE_PREFIX
 import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
 import com.roomservice.PUBSUB_MANAGER_KEY
+import com.roomservice.util.forwardSSe
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.sse.ServerSSESession
-import io.ktor.sse.ServerSentEvent
 import io.viascom.nanoid.NanoId
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.future.asDeferred
@@ -24,69 +23,9 @@ import kotlinx.serialization.json.Json
 import java.util.UUID
 
 @Serializable
-data class CreateRoomRequest(val name: String)
-
-@Serializable
 data class CreateRoomResponse(val playerID: String = "", val name: String = "", val roomID: String = "", val roomCode: String = "")
 
-suspend fun createRoomHandler(call: ApplicationCall) {
-    val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
-    val userName = call.receive<CreateRoomRequest>().name
-    val hostID = UUID.randomUUID().toString()
-    val roomID = UUID.randomUUID().toString()
-
-    val hostFuture = redis.set(PLAYER_TO_ROOM_PREFIX + hostID, roomID).asDeferred()
-    val nameFuture = redis.set(PLAYER_TO_NAME_PREFIX + hostID, userName).asDeferred()
-    val roomFuture = redis.lpush(ROOM_TO_PLAYERS_PREFIX + roomID, hostID).asDeferred()
-
-    val maxRetries = 3
-    var genCodeAttempts = 0
-    var successfulCode = false
-    var code = NanoId.generate(Constants.JOIN_CODE_SIZE, JOIN_CODE_ALPHABET)
-    while (!successfulCode && genCodeAttempts < maxRetries) {
-        genCodeAttempts++
-        val codeFuture = redis.setnx(JOIN_CODE_TO_ROOM_PREFIX + code,roomID).await()
-        if (codeFuture) {
-            successfulCode = true
-        } else {
-            code = NanoId.generate(Constants.JOIN_CODE_SIZE, JOIN_CODE_ALPHABET)
-        }
-    }
-    if (!successfulCode) {
-        return call.respond(HttpStatusCode.InternalServerError, CreateRoomResponse())
-    }
-
-    val roomToCodeFuture = redis.set(ROOM_TO_JOIN_CODE_PREFIX + roomID, code).asDeferred()
-
-    val (hostStatus, nameStatus, roomStatus, roomToCodeStatus) = awaitAll(
-        hostFuture,
-        nameFuture,
-        roomFuture,
-        roomToCodeFuture
-    )
-
-    if (null !in arrayOf(hostStatus, nameStatus, roomToCodeStatus) && roomStatus == 1L) {
-        return call.respond(
-            status = HttpStatusCode.OK,
-            message = CreateRoomResponse(
-                playerID = hostID,
-                name = userName,
-                roomID = roomID,
-                roomCode = code
-            )
-        )
-    } else {
-        redis.del(
-            PLAYER_TO_ROOM_PREFIX + hostID,
-            ROOM_TO_PLAYERS_PREFIX + roomID,
-            JOIN_CODE_TO_ROOM_PREFIX + code,
-            ROOM_TO_JOIN_CODE_PREFIX + roomID
-        )
-        return call.respond(HttpStatusCode.InternalServerError, CreateRoomResponse())
-    }
-}
-
-suspend fun createRoom(call: ApplicationCall, session : ServerSSESession) {
+suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession) {
     val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
     val pubSubManager = call.application.attributes[PUBSUB_MANAGER_KEY]
     val userName = call.parameters["username"] ?: return call.respond(HttpStatusCode.BadRequest)
@@ -134,16 +73,8 @@ suspend fun createRoom(call: ApplicationCall, session : ServerSSESession) {
                             roomCode = code
                         )
                 ), Constants.RoomBroadcastType.INITIAL.toString())
-
         session.send(hostID, Constants.RoomBroadcastType.HOST.toString())
-        for (msg in channel) {
-            val (type, msg) = msg.split(Constants.ROOM_BROADCAST_TYPE_DELIMITER)
-            session.send(ServerSentEvent(msg, type))
-            if (type == Constants.RoomBroadcastType.CLOSED.toString()) {
-                pubSubManager.unsubscribe(code, channel)
-                session.close()
-            }
-        }
+        forwardSSe(channel, code, session, pubSubManager)
     } else {
         redis.del(
             PLAYER_TO_ROOM_PREFIX + hostID,
@@ -153,6 +84,4 @@ suspend fun createRoom(call: ApplicationCall, session : ServerSSESession) {
         )
         return call.respond(HttpStatusCode.InternalServerError)
     }
-
-
 }

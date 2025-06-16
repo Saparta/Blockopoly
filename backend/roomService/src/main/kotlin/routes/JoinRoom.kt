@@ -7,17 +7,20 @@ import com.roomservice.Constants.PLAYER_TO_NAME_PREFIX
 import com.roomservice.Constants.PLAYER_TO_ROOM_PREFIX
 import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
+import com.roomservice.PUBSUB_MANAGER_KEY
 import com.roomservice.models.Player
 import com.roomservice.models.RoomBroadcast
+import com.roomservice.util.forwardSSe
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.request.receive
 import io.ktor.server.response.respond
+import io.ktor.server.sse.ServerSSESession
 import io.lettuce.core.api.async.RedisAsyncCommands
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.future.await
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import java.util.UUID
 
 @Serializable
@@ -33,14 +36,15 @@ data class JoinRoomBroadcast(val playerID: String, val name: String) {
     }
 }
 
-suspend fun joinRoomHandler(call: ApplicationCall) {
+suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
     val roomCode = call.parameters["roomCode"]
         ?: return call.respond(HttpStatusCode.BadRequest)
     val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
-    val userName = call.receive<JoinRoomRequest>().name
+    val pubSubManager = call.application.attributes[PUBSUB_MANAGER_KEY]
+    val userName = call.parameters["username"] ?: return call.respond(HttpStatusCode.BadRequest)
     val roomID = redis.get(JOIN_CODE_TO_ROOM_PREFIX + roomCode).await()
     if (roomID == null) {
-        call.respond(HttpStatusCode.NotFound, JoinRoomResponse())
+        call.respond(HttpStatusCode.NotFound)
         return
     }
 
@@ -50,7 +54,7 @@ suspend fun joinRoomHandler(call: ApplicationCall) {
         val numPlayers = redis.llen(ROOM_TO_PLAYERS_PREFIX + roomID).await()
         if (numPlayers >= MAX_PLAYERS) {
             redis.unwatch().await()
-            return call.respond(Constants.ROOM_FULL_STATUS, JoinRoomResponse())
+            return call.respond(Constants.ROOM_FULL_STATUS)
         }
 
         val playerID = UUID.randomUUID().toString()
@@ -62,29 +66,26 @@ suspend fun joinRoomHandler(call: ApplicationCall) {
                         JoinRoomBroadcast(playerID, userName).toString()
                 ).toString()
             )
+            val channel = pubSubManager.subscribe(roomCode)
             val playerNamesFuture = successfulUpdate.second.map {  redis.get(PLAYER_TO_NAME_PREFIX + it).asDeferred() }
 
             val players = playerNamesFuture.awaitAll().zip(successfulUpdate.second).map {
                 (playerName, playerId) -> Player(playerId, playerName)
             }
 
-            return call.respond(
-                HttpStatusCode.OK,
-                JoinRoomResponse(
-                    playerID = playerID,
+            session.send(Json.encodeToString(
+                JoinRoomResponse(playerID = playerID,
                     name = userName,
                     roomId = roomID,
                     roomCode = roomCode,
-                    players = players
-                )
-            )
+                    players = players)
+            ), Constants.RoomBroadcastType.INITIAL.toString())
+
+            session.send(players.last().playerId, Constants.RoomBroadcastType.HOST.toString())
+            forwardSSe(channel, roomCode, session, pubSubManager)
         }
      }
-
-    return call.respond(
-        HttpStatusCode.ServiceUnavailable,
-        JoinRoomResponse()
-    )
+    return call.respond(HttpStatusCode.ServiceUnavailable)
 }
 
 suspend fun updateDatastore(playerID: String, userName: String, roomID: String, call: ApplicationCall, redis: RedisAsyncCommands<String, String>) : Pair<Boolean, List<String>> {
@@ -97,7 +98,7 @@ suspend fun updateDatastore(playerID: String, userName: String, roomID: String, 
 
     if ((transactionResult[1] as ArrayList<String>).firstOrNull() != playerID ||
         (transactionResult[2] as String?) == null) {
-            call.respond(HttpStatusCode.InternalServerError, JoinRoomResponse())
+            call.respond(HttpStatusCode.InternalServerError)
             redis.lrem(ROOM_TO_PLAYERS_PREFIX + roomID, 1, playerID)
             redis.del(PLAYER_TO_ROOM_PREFIX + playerID, PLAYER_TO_NAME_PREFIX + userName)
         return Pair(false, emptyList())
