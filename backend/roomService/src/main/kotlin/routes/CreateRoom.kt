@@ -74,7 +74,7 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
                         )
                 ), Constants.RoomBroadcastType.INITIAL.toString())
         session.send(hostID, Constants.RoomBroadcastType.HOST.toString())
-        forwardSSe(channel, code, session, pubSubManager)
+        forwardSSe(channel, code, session, pubSubManager, hostID)
     } else {
         redis.del(
             PLAYER_TO_ROOM_PREFIX + hostID,

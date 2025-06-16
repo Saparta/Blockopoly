@@ -82,7 +82,7 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
             ), Constants.RoomBroadcastType.INITIAL.toString())
 
             session.send(players.last().playerId, Constants.RoomBroadcastType.HOST.toString())
-            forwardSSe(channel, roomCode, session, pubSubManager)
+            forwardSSe(channel, roomCode, session, pubSubManager, playerID)
         }
      }
     return call.respond(HttpStatusCode.ServiceUnavailable)

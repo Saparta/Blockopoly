@@ -13,10 +13,22 @@ import io.ktor.server.sse.sse
 
 fun Application.configureRouting() {
     routing {
-        sse("/createRoom/{username}") { createRoomHandler(call, this) }
-        sse("/joinRoom/{roomCode}/{username}") { joinRoomHandler(call, this) }
-        post("/leaveRoom/{playerId}") { leaveRoomHandler(call) }
-        post("/closeRoom/{roomCode}") { closeRoomHandler(call) }
+        sse("/createRoom/{username}") {
+            call.application.environment.log.info("Room Create Begun")
+            createRoomHandler(call, this)
+        }
+        sse("/joinRoom/{roomCode}/{username}") {
+            call.application.environment.log.info("Room Join Begun")
+            joinRoomHandler(call, this)
+        }
+        post("/leaveRoom/{playerId}") {
+            call.application.environment.log.info("Room Leave Begun")
+            leaveRoomHandler(call)
+        }
+        post("/closeRoom/{roomCode}") {
+            call.application.environment.log.info("Room Close Begun")
+            closeRoomHandler(call)
+        }
         sse("/room/{roomCode}") { roomConnect(call, this) }
     }
 }
