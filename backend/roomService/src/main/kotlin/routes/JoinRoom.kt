@@ -29,7 +29,7 @@ data class JoinRoomResponse(val playerID: String = "", val name: String = "", va
 @Serializable
 data class JoinRoomBroadcast(val playerID: String, val name: String) {
     override fun toString(): String {
-        return "$playerID;$name"
+        return "$playerID:$name"
     }
 }
 

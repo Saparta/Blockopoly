@@ -57,7 +57,7 @@ suspend fun leaveRoomHandler(call: ApplicationCall) {
 
     val numberRemaining = redis.llen(ROOM_TO_PLAYERS_PREFIX + roomID).await()
     if (numberRemaining == 0L) {
-        closeRoomHandler(call, playerID)
+        closeRoomHandler(call, roomID)
     }
 
     call.respond(HttpStatusCode.OK, message =  "$playerName has left the room.")
