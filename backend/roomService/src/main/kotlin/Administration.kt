@@ -48,6 +48,7 @@ fun Application.configureAdministration() {
     attributes.put(LETTUCE_REDIS_CLIENT_KEY, redisClient)
     attributes.put(LETTUCE_REDIS_CONNECTION_KEY, connection)
     attributes.put(LETTUCE_REDIS_COMMANDS_KEY, asyncCommands)
+    attributes.put(PUBSUB_MANAGER_KEY, RedisPubSubManager(redisClient))
 
     monitor.subscribe(ApplicationStopping) {
         connection.close()

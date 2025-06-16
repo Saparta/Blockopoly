@@ -6,6 +6,7 @@ import com.roomservice.Constants.PLAYER_TO_ROOM_PREFIX
 import com.roomservice.Constants.ROOM_TO_JOIN_CODE_PREFIX
 import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
+import com.roomservice.models.Player
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
@@ -50,7 +51,7 @@ suspend fun leaveRoomHandler(call: ApplicationCall) {
             roomCode,
             com.roomservice.models.RoomBroadcast(
                 Constants.RoomBroadcastType.LEAVE,
-                "$playerID;$playerName"
+                Player(playerID, playerName).toString()
             ).toString()
         ).await()
     }

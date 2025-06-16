@@ -41,7 +41,8 @@ suspend fun roomConnect(call: ApplicationCall, session: ServerSSESession) {
     try {
         for (msg in incoming) {
             call.application.environment.log.info("Sending $msg")
-            session.send(ServerSentEvent(msg))
+            val type = msg.split("#").first()
+            session.send(ServerSentEvent(msg, type))
         }
     } finally {
         call.application.environment.log.info("Closing redis pubSub")

@@ -13,6 +13,7 @@ private val env = dotenv {
 val LETTUCE_REDIS_CLIENT_KEY = AttributeKey<RedisClient>(env["REDIS_CLIENT"])
 val LETTUCE_REDIS_CONNECTION_KEY = AttributeKey<StatefulRedisConnection<String, String>>(env["REDIS_CONNECTION_KEY"])
 val LETTUCE_REDIS_COMMANDS_KEY = AttributeKey<RedisAsyncCommands<String, String>>(env["REDIS_ASYNC_COMMANDS_KEY"])
+val PUBSUB_MANAGER_KEY = AttributeKey<RedisPubSubManager>("PUBSUB_MANAGER_KEY")
 object Constants {
     const val JOIN_CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnopqrstuvwxyz"
     const val PLAYER_TO_NAME_PREFIX = "v1:p2n:"
@@ -24,9 +25,12 @@ object Constants {
     const val MAX_PLAYERS = 5
     val ROOM_FULL_STATUS = HttpStatusCode(420, "Room full")
     enum class RoomBroadcastType {
+        INITIAL,
         JOIN,
         LEAVE,
         CLOSED,
         HOST,
     }
+    const val ROOM_BROADCAST_TYPE_DELIMITER = "#"
+    const val ROOM_BROADCAST_MSG_DELIMITER = ":"
 }

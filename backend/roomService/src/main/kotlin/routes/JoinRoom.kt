@@ -29,15 +29,13 @@ data class JoinRoomResponse(val playerID: String = "", val name: String = "", va
 @Serializable
 data class JoinRoomBroadcast(val playerID: String, val name: String) {
     override fun toString(): String {
-        return "$playerID:$name"
+        return "$playerID${Constants.ROOM_BROADCAST_MSG_DELIMITER}$name"
     }
 }
 
 suspend fun joinRoomHandler(call: ApplicationCall) {
     val roomCode = call.parameters["roomCode"]
-        ?: return call.respond(
-            HttpStatusCode.BadRequest,
-            JoinRoomResponse())
+        ?: return call.respond(HttpStatusCode.BadRequest)
     val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
     val userName = call.receive<JoinRoomRequest>().name
     val roomID = redis.get(JOIN_CODE_TO_ROOM_PREFIX + roomCode).await()
