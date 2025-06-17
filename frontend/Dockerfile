@@ -32,6 +32,8 @@ RUN apt-get update && apt-get install -y \
 # Copy ALL app source code, including folders like src/assets/
 COPY . .
 
+RUN npm install react-router-dom @types/react-router-dom
+
 
 # Expose port for Vite
 EXPOSE 5173

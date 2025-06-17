@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import FallingBricks from "../components/FallingBricks";
 import logo from "../assets/Blockopoly-logo.svg";
 import { PrimaryButton } from "../components/startbutton";
@@ -7,17 +6,16 @@ import clickSound from "../assets/click.mp3";
 import "../style/StartScreen.css";
 
 type Props = {
-  onStart: () => void;
+  onStart: () => void; // parent decides where to go
 };
 
 export const StartScreen: React.FC<Props> = ({ onStart }) => {
-  const navigate = useNavigate();
-
   const handleClick = () => {
     new Audio(clickSound).play();
-    navigate("/main");
+
+    // delay lets brick-burst finish before leaving the page
     setTimeout(() => {
-      onStart();
+      onStart(); // 🔑 App will navigate("/main")
     }, 600);
   };
 

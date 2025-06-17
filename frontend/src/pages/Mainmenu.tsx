@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+/*  src/pages/MainMenu.tsx  */
+import React, { useState, useEffect, useRef } from "react";
 import "../style/Mainmenu.css";
 import FallingBricks from "../components/FallingBricks";
 import { useNavigate } from "react-router-dom";
@@ -6,71 +7,92 @@ import { useNavigate } from "react-router-dom";
 const API = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
 
 const MainMenu: React.FC = () => {
+  /* state */
   const [name, setName] = useState("");
-  const [roomPin, setRoomPin] = useState("");
+  const [codeInput, setCodeInput] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // validation
+  const esRef = useRef<EventSource | null>(null);
+  const navigatedRef = useRef(false);
+
   const isValidName = name.trim().length > 0 && name.trim().length <= 28;
-  const isValidPin = /^[A-Z0-9]{6}$/.test(roomPin);
+  const isValidCode = /^[A-Z0-9]{6}$/.test(codeInput);
 
-  // ───── JOIN ROOM ─────
-  const handleJoin = async () => {
-    setError("");
-
-    if (!isValidName || !isValidPin) {
-      setError("Enter a name and 6-char pin.");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API}/joinRoom/${roomPin}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
-      });
-
-      if (!res.ok) {
-        setError("Room not found or server error.");
-      } else {
-        console.log("Joined room!");
-        navigate(`/lobby/${roomPin}`);
-        // Transition to game room here
-      }
-    } catch (err) {
-      setError("Failed to connect to server.");
-    }
+  /* navigate once helper */
+  const goLobby = (code: string) => {
+    if (navigatedRef.current) return;
+    navigatedRef.current = true;
+    localStorage.setItem("name", name.trim());
+    console.log("[NAV] → /lobby/" + code);
+    navigate(`/lobby/${code}`, { state: { name: name.trim() } });
   };
 
-  // ───── CREATE ROOM ─────
-  const handleCreate = async () => {
-    setError("");
+  /* open SSE on a given URL */
+  const openStream = (url: string) => {
+    esRef.current?.close();
+    console.log("[SSE] open", url);
 
+    const es = new EventSource(url);
+    esRef.current = es;
+
+    es.addEventListener("open", () => console.log("[SSE] connected"));
+
+    /* ① MAIN handler — named INITIAL event */
+    es.addEventListener("INITIAL", (ev) => {
+      console.log("[SSE] INITIAL", ev.data);
+
+      let payload: { playerID?: string; roomCode?: string } = {};
+      try {
+        payload = JSON.parse(ev.data);
+      } catch {
+        console.warn("[SSE] INITIAL not JSON"); // shouldn’t happen
+      }
+
+      if (payload.playerID) {
+        sessionStorage.setItem("blockopolyPID", payload.playerID);
+      }
+
+      if (payload.roomCode) {
+        goLobby(payload.roomCode); // 🔑 navigate
+      }
+    });
+
+    es.onerror = () => {
+      console.error("[SSE] error");
+      es.close();
+      setError("Lost connection to server.");
+    };
+  };
+
+  /* JOIN */
+  const handleJoin = () => {
+    setError("");
+    if (!isValidName || !isValidCode) {
+      setError("Enter a name and 6-character room code.");
+      return;
+    }
+    const url = `${API}/joinRoom/${codeInput}/${encodeURIComponent(
+      name.trim()
+    )}`;
+    openStream(url);
+  };
+
+  /* CREATE */
+  const handleCreate = () => {
+    setError("");
     if (!isValidName) {
       setError("Please enter a name.");
       return;
     }
-
-    try {
-      const res = await fetch(`${API}/create-room`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
-      });
-
-      if (!res.ok) {
-        setError("Unable to create room.");
-        return;
-      }
-      console.log("Room created!");
-      // TODO: navigate to new room lobby
-    } catch {
-      setError("Backend unreachable.");
-    }
+    const url = `${API}/createRoom/${encodeURIComponent(name.trim())}`;
+    openStream(url);
   };
 
-  // ───── UI ─────
+  /* cleanup */
+  useEffect(() => () => esRef.current?.close(), []);
+
+  /* UI */
   return (
     <div className="main-menu">
       <div className="form-container">
@@ -86,10 +108,10 @@ const MainMenu: React.FC = () => {
 
         <input
           className="roompin-input"
-          placeholder="Room Pin (6 characters)"
-          value={roomPin}
+          placeholder="Room Code (6 characters)"
+          value={codeInput}
           maxLength={6}
-          onChange={(e) => setRoomPin(e.target.value.toUpperCase())}
+          onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
         />
 
         {error && <div className="error-message">{error}</div>}
@@ -98,7 +120,7 @@ const MainMenu: React.FC = () => {
           <button
             className="primary-button"
             onClick={handleJoin}
-            disabled={!isValidName || !isValidPin}
+            disabled={!isValidName || !isValidCode}
           >
             Join Room
           </button>
