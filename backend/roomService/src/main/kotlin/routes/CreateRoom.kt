@@ -9,6 +9,7 @@ import com.roomservice.Constants.ROOM_TO_JOIN_CODE_PREFIX
 import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
 import com.roomservice.PUBSUB_MANAGER_KEY
+import com.roomservice.util.format
 import com.roomservice.util.forwardSSe
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.sse.ServerSSESession
@@ -31,8 +32,8 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
         session.send(Constants.ErrorType.BAD_REQUEST.toString(), Constants.RoomBroadcastType.ERROR.toString())
         return session.close()
     }
-    val hostID = UUID.randomUUID().toString()
-    val roomID = UUID.randomUUID().toString()
+    val hostID = UUID.randomUUID().format()
+    val roomID = UUID.randomUUID().format()
 
     val hostFuture = redis.set(PLAYER_TO_ROOM_PREFIX + hostID, roomID).asDeferred()
     val nameFuture = redis.set(PLAYER_TO_NAME_PREFIX + hostID, userName).asDeferred()
@@ -56,7 +57,7 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
         return session.close()
     }
 
-    val channel = pubSubManager.subscribe(code)
+    val channel = pubSubManager.subscribe(roomID)
 
     val roomToCodeFuture = redis.set(ROOM_TO_JOIN_CODE_PREFIX + roomID, code).asDeferred()
 
@@ -77,7 +78,7 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
                         )
                 ), Constants.RoomBroadcastType.INITIAL.toString())
         session.send(hostID, Constants.RoomBroadcastType.HOST.toString())
-        forwardSSe(channel, code, session, pubSubManager, hostID)
+        forwardSSe(channel, roomID, session, pubSubManager, hostID)
     } else {
         redis.del(
             PLAYER_TO_ROOM_PREFIX + hostID,

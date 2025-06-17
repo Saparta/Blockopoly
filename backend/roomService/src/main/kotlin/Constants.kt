@@ -20,8 +20,9 @@ object Constants {
     const val ROOM_TO_PLAYERS_PREFIX = "v1:r2p:"
     const val JOIN_CODE_TO_ROOM_PREFIX = "v1:j2r:"
     const val ROOM_TO_JOIN_CODE_PREFIX = "v1:r2j:"
+    const val ROOM_START_STATUS_PREFIX = "v1:rss:"
     const val JOIN_CODE_SIZE = 6
-    const val MAX_PLAYERS = 5
+    const val MAX_PLAYERS = 5L
     enum class RoomBroadcastType {
         INITIAL,
         JOIN,
@@ -35,7 +36,8 @@ object Constants {
         SERVICE_UNAVAILABLE,
         INTERNAL_SERVER_ERROR,
         ROOM_NOT_FOUND,
-        ROOM_FULL
+        ROOM_FULL,
+        ROOM_ALREADY_STARTED
     }
     const val ROOM_BROADCAST_TYPE_DELIMITER = "#"
     const val ROOM_BROADCAST_MSG_DELIMITER = ":"

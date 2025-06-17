@@ -5,11 +5,13 @@ import com.roomservice.Constants.JOIN_CODE_TO_ROOM_PREFIX
 import com.roomservice.Constants.MAX_PLAYERS
 import com.roomservice.Constants.PLAYER_TO_NAME_PREFIX
 import com.roomservice.Constants.PLAYER_TO_ROOM_PREFIX
+import com.roomservice.Constants.ROOM_START_STATUS_PREFIX
 import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
 import com.roomservice.PUBSUB_MANAGER_KEY
 import com.roomservice.models.Player
 import com.roomservice.models.RoomBroadcast
+import com.roomservice.util.format
 import com.roomservice.util.forwardSSe
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.sse.ServerSSESession
@@ -53,18 +55,24 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
     val maxRetry = 3
     repeat(maxRetry) { attempt ->
         redis.watch(ROOM_TO_PLAYERS_PREFIX + roomID).await()
-        val numPlayers = redis.llen(ROOM_TO_PLAYERS_PREFIX + roomID).await()
-        if (numPlayers >= MAX_PLAYERS) {
+        redis.watch(ROOM_START_STATUS_PREFIX + roomID).await()
+        val numPlayers = redis.llen(ROOM_TO_PLAYERS_PREFIX + roomID)
+        val roomStarted = redis.get(ROOM_START_STATUS_PREFIX + roomID).await()
+        if (numPlayers.await() >= MAX_PLAYERS) {
             redis.unwatch().await()
             session.send(Constants.ErrorType.ROOM_FULL.toString(), Constants.RoomBroadcastType.ERROR.toString())
             return session.close()
+        } else if (roomStarted == "true") {
+            redis.unwatch().await()
+            session.send(Constants.ErrorType.ROOM_ALREADY_STARTED.toString(), Constants.RoomBroadcastType.ERROR.toString())
+            return session.close()
         }
 
-        val playerID = UUID.randomUUID().toString()
-        val channel = pubSubManager.subscribe(roomCode)
+        val playerID = UUID.randomUUID().format()
+        val channel = pubSubManager.subscribe(roomID)
         val successfulUpdate = updateDatastore(playerID, userName, roomID, redis, session)
         if (successfulUpdate.first) {
-            redis.publish(roomCode,
+            redis.publish(roomID,
                     RoomBroadcast(
                         Constants.RoomBroadcastType.JOIN,
                         JoinRoomBroadcast(playerID, userName).toString()
@@ -85,9 +93,9 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
             ), Constants.RoomBroadcastType.INITIAL.toString())
 
             session.send(players.last().playerId, Constants.RoomBroadcastType.HOST.toString())
-            return forwardSSe(channel, roomCode, session, pubSubManager, playerID)
+            return forwardSSe(channel, roomID, session, pubSubManager, playerID)
         }
-        pubSubManager.unsubscribe(roomCode, channel)
+        pubSubManager.unsubscribe(roomID, channel)
      }
     session.send(Constants.ErrorType.SERVICE_UNAVAILABLE.toString(), Constants.RoomBroadcastType.ERROR.toString())
     return session.close()

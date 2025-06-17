@@ -23,7 +23,7 @@ suspend fun leaveRoomHandler(call: ApplicationCall) {
     val roomID = redis.get(PLAYER_TO_ROOM_PREFIX + playerID).await()
 
     if (roomID == null) {
-        call.respond(HttpStatusCode.InternalServerError)
+        return call.respond(HttpStatusCode.InternalServerError)
     }
 
     val removedCount = redis.lrem(ROOM_TO_PLAYERS_PREFIX + roomID, 1, playerID).await()
@@ -48,7 +48,7 @@ suspend fun leaveRoomHandler(call: ApplicationCall) {
 
     if (roomCode != null && playerName != null) {
         redis.publish(
-            roomCode,
+            roomID,
             com.roomservice.models.RoomBroadcast(
                 Constants.RoomBroadcastType.LEAVE,
                 Player(playerID, playerName).toString()

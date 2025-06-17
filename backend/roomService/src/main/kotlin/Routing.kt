@@ -24,7 +24,7 @@ fun Application.configureRouting() {
             call.application.environment.log.info("Room Leave Begun")
             leaveRoomHandler(call)
         }
-        post("/closeRoom/{roomCode}") {
+        post("/closeRoom/{roomId}") {
             call.application.environment.log.info("Room Close Begun")
             closeRoomHandler(call)
         }
