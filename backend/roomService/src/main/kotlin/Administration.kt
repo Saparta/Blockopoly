@@ -25,7 +25,7 @@ fun Application.configureAdministration() {
 
     install(RateLimit) {
         global {
-            rateLimiter(limit = 2, refillPeriod = 10.seconds)
+            rateLimiter(limit = 5, refillPeriod = 10.seconds)
             requestKey { applicationCall -> applicationCall.request.origin.remoteAddress }
         }
     }
