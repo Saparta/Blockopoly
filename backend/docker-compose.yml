@@ -24,5 +24,16 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+
+  game-service:
+    build: ./gameService
+    ports:
+      - "8081:8081"      # Map host port 8080 to container port 8080
+    environment:
+      KTOR_REDIS_HOST: redis
+      KTOR_REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
 volumes:
   redis_data: # Define the named volume for Redis data persistence

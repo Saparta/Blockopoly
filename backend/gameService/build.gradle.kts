@@ -31,6 +31,8 @@ dependencies {
     implementation("io.ktor:ktor-server-netty")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-config-yaml")
+    implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
+    implementation("io.lettuce:lettuce-core:6.7.1.RELEASE")
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
