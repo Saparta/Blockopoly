@@ -17,7 +17,7 @@ const MainMenu: React.FC = () => {
   const navigatedRef = useRef(false);
 
   const isValidName = name.trim().length > 0 && name.trim().length <= 28;
-  const isValidCode = /^[A-Z0-9]{6}$/.test(codeInput);
+  const isValidCode = /^[A-Za-z0-9]{6}$/.test(codeInput);
 
   /* navigate once helper */
   const goLobby = (code: string) => {
@@ -111,7 +111,9 @@ const MainMenu: React.FC = () => {
           placeholder="Room Code (6 characters)"
           value={codeInput}
           maxLength={6}
-          onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+          onChange={(e) =>
+            setCodeInput(e.target.value.replace(/[^a-zA-Z0-9]/g, ""))
+          }
         />
 
         {error && <div className="error-message">{error}</div>}
