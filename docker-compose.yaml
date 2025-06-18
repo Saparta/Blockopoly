@@ -15,5 +15,6 @@ services:
     environment:
       # Browser hits backend via host port
       - VITE_API_BASE=http://localhost:8080
+    platform: linux/amd64
     depends_on:
       - room-service

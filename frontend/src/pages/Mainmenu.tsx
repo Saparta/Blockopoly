@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 const API = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
 
 const MainMenu: React.FC = () => {
-  /* state */
   const [name, setName] = useState("");
   const [codeInput, setCodeInput] = useState("");
   const [error, setError] = useState("");
@@ -19,7 +18,6 @@ const MainMenu: React.FC = () => {
   const isValidName = name.trim().length > 0 && name.trim().length <= 28;
   const isValidCode = /^[A-Za-z0-9]{6}$/.test(codeInput);
 
-  /* navigate once helper */
   const goLobby = (code: string) => {
     if (navigatedRef.current) return;
     navigatedRef.current = true;
@@ -28,8 +26,7 @@ const MainMenu: React.FC = () => {
     navigate(`/lobby/${code}`, { state: { name: name.trim() } });
   };
 
-  /* open SSE on a given URL */
-  const openStream = (url: string) => {
+  const openStream = (url: string, isHost: boolean) => {
     esRef.current?.close();
     console.log("[SSE] open", url);
 
@@ -38,23 +35,26 @@ const MainMenu: React.FC = () => {
 
     es.addEventListener("open", () => console.log("[SSE] connected"));
 
-    /* ① MAIN handler — named INITIAL event */
     es.addEventListener("INITIAL", (ev) => {
       console.log("[SSE] INITIAL", ev.data);
-
       let payload: { playerID?: string; roomCode?: string } = {};
       try {
         payload = JSON.parse(ev.data);
       } catch {
-        console.warn("[SSE] INITIAL not JSON"); // shouldn’t happen
+        console.warn("[SSE] INITIAL not JSON");
       }
 
       if (payload.playerID) {
         sessionStorage.setItem("blockopolyPID", payload.playerID);
       }
+      if (isHost) {
+        sessionStorage.setItem("blockopolyIsHost", "true");
+      } else {
+        sessionStorage.setItem("blockopolyIsHost", "false");
+      }
 
       if (payload.roomCode) {
-        goLobby(payload.roomCode); // 🔑 navigate
+        goLobby(payload.roomCode);
       }
     });
 
@@ -65,7 +65,6 @@ const MainMenu: React.FC = () => {
     };
   };
 
-  /* JOIN */
   const handleJoin = () => {
     setError("");
     if (!isValidName || !isValidCode) {
@@ -75,10 +74,9 @@ const MainMenu: React.FC = () => {
     const url = `${API}/joinRoom/${codeInput}/${encodeURIComponent(
       name.trim()
     )}`;
-    openStream(url);
+    openStream(url, false);
   };
 
-  /* CREATE */
   const handleCreate = () => {
     setError("");
     if (!isValidName) {
@@ -86,13 +84,11 @@ const MainMenu: React.FC = () => {
       return;
     }
     const url = `${API}/createRoom/${encodeURIComponent(name.trim())}`;
-    openStream(url);
+    openStream(url, true);
   };
 
-  /* cleanup */
   useEffect(() => () => esRef.current?.close(), []);
 
-  /* UI */
   return (
     <div className="main-menu">
       <div className="form-container">
