@@ -11,7 +11,7 @@ const createWindow = () => {
     },
   });
 
-  win.loadURL("http://localhost:5174"); // ← use correct port!
+  win.loadURL("http://localhost:5173"); // ← use correct port!
 };
 
 app.whenReady().then(() => {
