@@ -19,13 +19,13 @@ suspend fun leaveRoomHandler(call: ApplicationCall) {
     val playerID = call.parameters["playerId"]
         ?: return call.respond(HttpStatusCode.BadRequest)
     val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
-
     val roomID = redis.get(PLAYER_TO_ROOM_PREFIX + playerID).await()
 
     if (roomID == null) {
         return call.respond(HttpStatusCode.InternalServerError)
     }
 
+    val hostLeaving = redis.lindex(ROOM_TO_PLAYERS_PREFIX + roomID, -1).await() == playerID
     val removedCount = redis.lrem(ROOM_TO_PLAYERS_PREFIX + roomID, 1, playerID).await()
 
     if (removedCount == 0L) {
@@ -60,7 +60,19 @@ suspend fun leaveRoomHandler(call: ApplicationCall) {
     if (numberRemaining == 0L) {
         closeRoomHandler(call, roomID)
     }
+    else if (hostLeaving) {
+        val newHostID = redis.lindex(ROOM_TO_PLAYERS_PREFIX + roomID, -1).await()
+        val newHostName = redis.get(PLAYER_TO_NAME_PREFIX + newHostID).await()
+        redis.publish(roomID,
+            com.roomservice.models.RoomBroadcast(
+                Constants.RoomBroadcastType.HOST, Player(newHostID, newHostName).toString()
+            ).toString()
+        ).await()
+    }
 
     call.respond(HttpStatusCode.OK, message =  "$playerName has left the room.")
+
+
+
 
 }
