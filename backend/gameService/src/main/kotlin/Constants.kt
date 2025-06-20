@@ -1,5 +1,7 @@
 package com.gameservice
 
+import com.gameservice.models.Color
+import com.gameservice.models.createCardMapping
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.util.AttributeKey
 import io.lettuce.core.RedisClient
@@ -12,6 +14,20 @@ private val env = dotenv {
 val REDIS_CLIENT_KEY = AttributeKey<RedisClient>(env["REDIS_CLIENT"])
 val REDIS_CONNECTION_KEY = AttributeKey<StatefulRedisConnection<String, String>>(env["REDIS_CONNECTION_KEY"])
 val REDIS_COMMANDS_KEY = AttributeKey<RedisAsyncCommands<String, String>>(env["REDIS_ASYNC_COMMANDS_KEY"])
+val cardMapping = createCardMapping()
+val deck = cardMapping.values
+const val INITIAL_DRAW_COUNT = 5
+val colorToRent = mapOf(
+    Pair(Color.BLUE, listOf(3, 8)),
+    Pair(Color.GREEN, listOf(2, 4, 7)),
+    Pair(Color.BROWN, listOf(1, 2)),
+    Pair(Color.TURQOUISE, listOf(1, 2, 3)),
+    Pair(Color.ORANGE, listOf(1, 3, 5)),
+    Pair(Color.MAGENTA, listOf(1, 2, 4)),
+    Pair(Color.RAILROAD, listOf(1, 2, 3, 4)),
+    Pair(Color.UTILITY, listOf(1, 2)),
+    Pair(Color.YELLOW, listOf(2, 4, 6)),
+    Pair(Color.RED, listOf(2, 3, 6)))
 object Constants {
     const val SECONDS_IN_DAY = 86400
     const val PLAYER_TO_NAME_PREFIX = "v1:p2n:"

@@ -9,6 +9,7 @@ import com.roomservice.Constants.ROOM_TO_JOIN_CODE_PREFIX
 import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
 import com.roomservice.PUBSUB_MANAGER_KEY
+import com.roomservice.models.Player
 import com.roomservice.util.format
 import com.roomservice.util.forwardSSe
 import io.ktor.server.application.ApplicationCall
@@ -77,7 +78,7 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
                             roomCode = code
                         )
                 ), Constants.RoomBroadcastType.INITIAL.toString())
-        session.send(hostID, Constants.RoomBroadcastType.HOST.toString())
+        session.send(Player(hostID, userName).toString(), Constants.RoomBroadcastType.HOST.toString())
         forwardSSe(channel, roomID, session, pubSubManager, hostID)
     } else {
         redis.del(

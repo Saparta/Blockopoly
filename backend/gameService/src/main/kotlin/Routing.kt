@@ -14,7 +14,7 @@ fun Application.configureRouting() {
     routing {
         get("/") {call.respond(HttpStatusCode.OK)}
         post("/start/{roomId}") {
-            // TODO: Use JWT to authenticate request source + read playerId from request body
+            // TODO: Use JWT + playerId from request body to guarantee the user starting the room is part of the room
             call.application.environment.log.info("Starting game")
             val redis = call.application.attributes[REDIS_COMMANDS_KEY]
             val roomId = call.parameters["roomId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
@@ -22,11 +22,12 @@ fun Application.configureRouting() {
             if (roomStartable < 2) {
                 call.respond(HttpStatusCode.BadRequest)
             }
-            val roomStarted = redis.setnx(Constants.ROOM_START_STATUS_PREFIX + roomId, "true")
+            val roomStarted = redis.setnx(Constants.ROOM_START_STATUS_PREFIX + roomId, "true").await()
             redis.expire(Constants.ROOM_START_STATUS_PREFIX + roomId, Constants.SECONDS_IN_DAY.toLong())
-            if (!roomStarted.await()) {
+            if (!roomStarted) {
                 return@post call.respond(HttpStatusCode.InternalServerError)
             }
+            GameManager.addRoom(RoomManager(roomId, redis.lrange(Constants.ROOM_TO_PLAYERS_PREFIX + roomId, 0, -1).await()))
             redis.publish(roomId, "START#")
             call.respond(HttpStatusCode.OK)
         }
