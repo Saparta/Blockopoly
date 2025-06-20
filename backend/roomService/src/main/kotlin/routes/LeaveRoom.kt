@@ -1,11 +1,11 @@
 package com.roomservice.routes
 
-import com.roomservice.Constants
-import com.roomservice.Constants.PLAYER_TO_NAME_PREFIX
-import com.roomservice.Constants.PLAYER_TO_ROOM_PREFIX
-import com.roomservice.Constants.ROOM_TO_JOIN_CODE_PREFIX
-import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
+import com.roomservice.PLAYER_TO_NAME_PREFIX
+import com.roomservice.PLAYER_TO_ROOM_PREFIX
+import com.roomservice.ROOM_TO_JOIN_CODE_PREFIX
+import com.roomservice.ROOM_TO_PLAYERS_PREFIX
+import com.roomservice.RoomBroadcastType
 import com.roomservice.models.Player
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
@@ -50,7 +50,7 @@ suspend fun leaveRoomHandler(call: ApplicationCall) {
         redis.publish(
             roomID,
             com.roomservice.models.RoomBroadcast(
-                Constants.RoomBroadcastType.LEAVE,
+                RoomBroadcastType.LEAVE,
                 Player(playerID, playerName).toString()
             ).toString()
         ).await()
@@ -65,7 +65,7 @@ suspend fun leaveRoomHandler(call: ApplicationCall) {
         val newHostName = redis.get(PLAYER_TO_NAME_PREFIX + newHostID).await()
         redis.publish(roomID,
             com.roomservice.models.RoomBroadcast(
-                Constants.RoomBroadcastType.HOST, Player(newHostID, newHostName).toString()
+                RoomBroadcastType.HOST, Player(newHostID, newHostName).toString()
             ).toString()
         ).await()
     }

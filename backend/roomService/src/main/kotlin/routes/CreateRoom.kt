@@ -1,14 +1,16 @@
 package com.roomservice.routes
 
-import com.roomservice.Constants
-import com.roomservice.Constants.JOIN_CODE_ALPHABET
-import com.roomservice.Constants.JOIN_CODE_TO_ROOM_PREFIX
-import com.roomservice.Constants.PLAYER_TO_NAME_PREFIX
-import com.roomservice.Constants.PLAYER_TO_ROOM_PREFIX
-import com.roomservice.Constants.ROOM_TO_JOIN_CODE_PREFIX
-import com.roomservice.Constants.ROOM_TO_PLAYERS_PREFIX
+import com.roomservice.ErrorType
+import com.roomservice.JOIN_CODE_ALPHABET
+import com.roomservice.JOIN_CODE_SIZE
+import com.roomservice.JOIN_CODE_TO_ROOM_PREFIX
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
+import com.roomservice.PLAYER_TO_NAME_PREFIX
+import com.roomservice.PLAYER_TO_ROOM_PREFIX
 import com.roomservice.PUBSUB_MANAGER_KEY
+import com.roomservice.ROOM_TO_JOIN_CODE_PREFIX
+import com.roomservice.ROOM_TO_PLAYERS_PREFIX
+import com.roomservice.RoomBroadcastType
 import com.roomservice.models.Player
 import com.roomservice.util.format
 import com.roomservice.util.forwardSSe
@@ -30,7 +32,7 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
     val pubSubManager = call.application.attributes[PUBSUB_MANAGER_KEY]
     val userName = call.parameters["username"]
     if (userName.isNullOrBlank()) {
-        session.send(Constants.ErrorType.BAD_REQUEST.toString(), Constants.RoomBroadcastType.ERROR.toString())
+        session.send(ErrorType.BAD_REQUEST.toString(), RoomBroadcastType.ERROR.toString())
         return session.close()
     }
     val hostID = UUID.randomUUID().format()
@@ -43,18 +45,18 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
     val maxRetries = 3
     var genCodeAttempts = 0
     var successfulCode = false
-    var code = NanoId.generate(Constants.JOIN_CODE_SIZE, JOIN_CODE_ALPHABET)
+    var code = NanoId.generate(JOIN_CODE_SIZE, JOIN_CODE_ALPHABET)
     while (!successfulCode && genCodeAttempts < maxRetries) {
         genCodeAttempts++
         val codeFuture = redis.setnx(JOIN_CODE_TO_ROOM_PREFIX + code,roomID).await()
         if (codeFuture) {
             successfulCode = true
         } else {
-            code = NanoId.generate(Constants.JOIN_CODE_SIZE, JOIN_CODE_ALPHABET)
+            code = NanoId.generate(JOIN_CODE_SIZE, JOIN_CODE_ALPHABET)
         }
     }
     if (!successfulCode) {
-        session.send(Constants.ErrorType.SERVICE_UNAVAILABLE.toString(), Constants.RoomBroadcastType.ERROR.toString())
+        session.send(ErrorType.SERVICE_UNAVAILABLE.toString(), RoomBroadcastType.ERROR.toString())
         return session.close()
     }
 
@@ -77,8 +79,8 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
                             roomID = roomID,
                             roomCode = code
                         )
-                ), Constants.RoomBroadcastType.INITIAL.toString())
-        session.send(Player(hostID, userName).toString(), Constants.RoomBroadcastType.HOST.toString())
+                ), RoomBroadcastType.INITIAL.toString())
+        session.send(Player(hostID, userName).toString(), RoomBroadcastType.HOST.toString())
         forwardSSe(channel, roomID, session, pubSubManager, hostID)
     } else {
         redis.del(
@@ -87,7 +89,7 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
             JOIN_CODE_TO_ROOM_PREFIX + code,
             ROOM_TO_JOIN_CODE_PREFIX + roomID
         )
-        session.send(Constants.ErrorType.INTERNAL_SERVER_ERROR.toString(), Constants.RoomBroadcastType.ERROR.toString())
+        session.send(ErrorType.INTERNAL_SERVER_ERROR.toString(), RoomBroadcastType.ERROR.toString())
         return session.close()
     }
 }

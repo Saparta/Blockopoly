@@ -18,16 +18,16 @@ fun Application.configureRouting() {
             call.application.environment.log.info("Starting game")
             val redis = call.application.attributes[REDIS_COMMANDS_KEY]
             val roomId = call.parameters["roomId"] ?: return@post call.respond(HttpStatusCode.BadRequest)
-            val roomStartable = redis.llen(Constants.ROOM_TO_PLAYERS_PREFIX + roomId).await()
+            val roomStartable = redis.llen(ROOM_TO_PLAYERS_PREFIX + roomId).await()
             if (roomStartable < 2) {
                 call.respond(HttpStatusCode.BadRequest)
             }
-            val roomStarted = redis.setnx(Constants.ROOM_START_STATUS_PREFIX + roomId, "true").await()
-            redis.expire(Constants.ROOM_START_STATUS_PREFIX + roomId, Constants.SECONDS_IN_DAY.toLong())
+            val roomStarted = redis.setnx(ROOM_START_STATUS_PREFIX + roomId, "true").await()
+            redis.expire(ROOM_START_STATUS_PREFIX + roomId, SECONDS_IN_DAY.toLong())
             if (!roomStarted) {
                 return@post call.respond(HttpStatusCode.InternalServerError)
             }
-            GameManager.addRoom(RoomManager(roomId, redis.lrange(Constants.ROOM_TO_PLAYERS_PREFIX + roomId, 0, -1).await()))
+            GameManager.addRoom(RoomManager(roomId, redis.lrange(ROOM_TO_PLAYERS_PREFIX + roomId, 0, -1).await()))
             redis.publish(roomId, "START#")
             call.respond(HttpStatusCode.OK)
         }
