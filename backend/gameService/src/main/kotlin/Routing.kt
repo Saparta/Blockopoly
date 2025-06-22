@@ -27,14 +27,19 @@ fun Application.configureRouting() {
             if (!roomStarted) {
                 return@post call.respond(HttpStatusCode.InternalServerError)
             }
-            GameManager.addRoom(RoomManager(roomId, redis.lrange(ROOM_TO_PLAYERS_PREFIX + roomId, 0, -1).await()))
+            ServerManager.addRoom(RoomManager(roomId, redis.lrange(ROOM_TO_PLAYERS_PREFIX + roomId, 0, -1).await()))
             redis.publish(roomId, "START#")
             call.respond(HttpStatusCode.OK)
         }
 
-        route("/ws/play/{playerId}") {
+        route("/ws/play/{roomId}/{playerId}") {
             webSocket{
-
+                val roomId = call.parameters["roomId"] ?: return@webSocket
+                val playerId = call.parameters["playerId"] ?: return@webSocket
+                ServerManager.connectToRoom(roomId, playerId, this)
+                for (msg in incoming) {
+                    call.application.environment.log.info(msg.toString())
+                }
             }
         }
     }

@@ -1,5 +1,7 @@
 package com.gameservice.models
 
+import com.gameservice.HOTEL_ADDITIONAL_RENT
+import com.gameservice.HOUSE_ADDITIONAL_RENT
 import com.gameservice.colorToRent
 import kotlinx.serialization.Serializable
 
@@ -20,9 +22,9 @@ data class PropertySet(val id: String, val properties: MutableList<Card.Property
     fun calculateRent() : Int {
         if (house != null) {
             if (hotel != null) {
-                return colorToRent[color]!![properties.size - 1] + 7
+                return colorToRent[color]!![properties.size - 1] + HOUSE_ADDITIONAL_RENT + HOTEL_ADDITIONAL_RENT
             }
-            return colorToRent[color]!![properties.size - 1] + 3
+            return colorToRent[color]!![properties.size - 1] + HOUSE_ADDITIONAL_RENT
         }
         return colorToRent[color]!![properties.size - 1]
     }

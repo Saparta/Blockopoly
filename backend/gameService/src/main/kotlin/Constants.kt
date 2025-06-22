@@ -18,18 +18,23 @@ const val SECONDS_IN_DAY = 86400
 const val PLAYER_TO_NAME_PREFIX = "v1:p2n:"
 const val PLAYER_TO_ROOM_PREFIX = "v1:p2r:"
 const val ROOM_TO_PLAYERS_PREFIX = "v1:r2p:"
-const val JOIN_CODE_TO_ROOM_PREFIX = "v1:j2r:"
-const val ROOM_TO_JOIN_CODE_PREFIX = "v1:r2j:"
 const val ROOM_START_STATUS_PREFIX = "v1:rss:"
 enum class ErrorType {
     BAD_REQUEST,
     SERVICE_UNAVAILABLE,
     INTERNAL_SERVER_ERROR,
 }
+enum class MessageType {
+    LEAVE,
+    STATE,
+}
 
 val cardMapping = createCardMapping()
 val deck = cardMapping.values
+const val HOUSE_ADDITIONAL_RENT = 3
+const val HOTEL_ADDITIONAL_RENT = 4
 const val INITIAL_DRAW_COUNT = 5
+const val FAKE_CARD_ID = 999
 val colorToRent = mapOf(
     Pair(Color.BLUE, listOf(3, 8)),
     Pair(Color.GREEN, listOf(2, 4, 7)),

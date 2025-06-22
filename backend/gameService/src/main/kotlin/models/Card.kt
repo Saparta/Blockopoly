@@ -33,7 +33,7 @@ enum class ActionType {
 @Serializable
 sealed class Card {
     abstract val id: Int
-    abstract val type: CardType
+    abstract val cardType: CardType
     abstract val value: Int?
 
 
@@ -45,13 +45,13 @@ sealed class Card {
     // Client will send id, who's using it, and optionally what player/properties/sets it's being used on
     @Serializable
     data class Action(override val id: Int, override val value: Int, override val actionType: ActionType) : ActionCard() {
-        override val type = CardType.ACTION
+        override val cardType = CardType.ACTION
     }
 
     // Client will send id, who's using it, and the color being used
     @Serializable
     data class Rent(override val id: Int, override val value: Int, override val actionType : ActionType, val colors: Set<Color>) : ActionCard() {
-        override val type = CardType.ACTION
+        override val cardType = CardType.ACTION
     }
 
     @Serializable
@@ -62,19 +62,19 @@ sealed class Card {
     // Client will send id of card and who's using it
     @Serializable
     data class Property(override val id: Int, override val color: Color, override val value: Int) : PropertyCard() {
-        override val type = CardType.PROPERTY
+        override val cardType = CardType.PROPERTY
     }
 
     // Client will send id of card, who's using it, and the color it's being placed as
     @Serializable
     data class WildProperty(override val id: Int, override var color: Color?, override val value: Int?, val possibleColors: Set<Color>) : PropertyCard() {
-        override val type = CardType.PROPERTY
+        override val cardType = CardType.PROPERTY
     }
 
     // Client will send id of card and who's using it
     @Serializable
     data class Money(override val id: Int, override val value: Int) : Card() {
-        override val type = CardType.MONEY
+        override val cardType = CardType.MONEY
     }
 }
 
@@ -85,11 +85,11 @@ fun createCardMapping() : Map<Int, Card> {
         repeat(2) { id++; put(id, Card.Action(id, 5, ActionType.DEAL_BREAKER))}
         repeat(3) { id++; put(id, Card.Action(id, 4, ActionType.JUST_SAY_NO))}
         repeat(3) { id++; put(id, Card.Action(id, 3, ActionType.SLY_DEAL))}
-        repeat(4) { id++; put(id, Card.Action(id, 3, ActionType.FORCED_DEAL))}
+        repeat(3) { id++; put(id, Card.Action(id, 3, ActionType.FORCED_DEAL))}
         repeat(3) { id++; put(id, Card.Action(id, 3, ActionType.DEBT_COLLECTOR))}
         repeat(3) { id++; put(id, Card.Action(id, 2, ActionType.BIRTHDAY))}
         repeat(3) { id++; put(id, Card.Action(id, 3, ActionType.HOUSE))}
-        repeat(3) { id++; put(id, Card.Action(id, 4, ActionType.HOTEL))}
+        repeat(2) { id++; put(id, Card.Action(id, 4, ActionType.HOTEL))}
         repeat(2) { id++; put(id, Card.Action(id, 1, ActionType.DOUBLE_RENT))}
         repeat(10) { id++; put(id, Card.Action(id, 1, ActionType.PASS_GO))}
 
@@ -112,7 +112,6 @@ fun createCardMapping() : Map<Int, Card> {
         repeat(3) { id++; put(id, Card.Property(id, Color.YELLOW, 3))}
         repeat(4) { id++; put(id, Card.Property(id, Color.RAILROAD, 2))}
         repeat(2) { id++; put(id, Card.Property(id, Color.UTILITY, 2))}
-        repeat(3) { id++; put(id, Card.Property(id, Color.MAGENTA, 2))}
         // Wild Properties
         repeat(1) {id++; put(id, Card.WildProperty(id, null, 4, setOf(Color.BLUE, Color.GREEN)))}
         repeat(1) {id++; put(id, Card.WildProperty(id, null, 1, setOf(Color.BROWN, Color.TURQOUISE)))}
