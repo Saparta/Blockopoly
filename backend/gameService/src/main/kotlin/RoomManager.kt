@@ -6,7 +6,11 @@ import com.gameservice.models.PropertyCollection
 import com.gameservice.models.SocketMessage
 import io.ktor.websocket.WebSocketSession
 import io.ktor.websocket.send
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 
@@ -14,6 +18,8 @@ import java.util.concurrent.ConcurrentHashMap
 class RoomManager(val roomId: String, val players: List<String>) {
     private lateinit var state : MutableStateFlow<GameState>
     private val playerSockets = ConcurrentHashMap<String, WebSocketSession>()
+    private val gameScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
 
     suspend fun broadcast(message: SocketMessage) {
         for ((_, session) in playerSockets) {
@@ -39,19 +45,26 @@ class RoomManager(val roomId: String, val players: List<String>) {
         }
     }
 
-    suspend fun connectPlayer(playerId: String, session: WebSocketSession) {
+     suspend fun connectPlayer(playerId: String, session: WebSocketSession) {
         if (playerId in players && !playerSockets.containsKey(playerId)) {
             playerSockets[playerId] = session
         }
         if (playerSockets.size == players.size) {
             val game = GameState()
-            game.playerAtTurn = players.random()
+            game.playerOrder = players.shuffled()
+            game.playerAtTurn = game.playerOrder.first()
             players.forEach { id ->
                 val hand = MutableList(INITIAL_DRAW_COUNT) { game.drawPile.removeFirst() }
                 game.playerState[id] = PlayerState(hand, PropertyCollection(), mutableListOf())
             }
             state = MutableStateFlow(game)
-            broadcastState()
+            broadcast(SocketMessage(MessageType.PLAY_ORDER.toString(), Json.encodeToString(game.playerOrder)))
+            gameScope.launch {
+                state
+                    .collect { newState ->
+                        broadcastState()
+                    }
+            }
         }
     }
 }

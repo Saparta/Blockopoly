@@ -26,6 +26,7 @@ enum class ErrorType {
 }
 enum class MessageType {
     LEAVE,
+    PLAY_ORDER,
     STATE,
 }
 

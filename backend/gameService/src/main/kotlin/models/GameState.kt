@@ -10,6 +10,8 @@ class GameState(var playerAtTurn: String?,
                 val discardPile: MutableList<Card>,
                 val playerState: MutableMap<String, PlayerState>) {
 
+    lateinit var playerOrder : List<String>
+
     constructor() : this(
         null,
         null,
