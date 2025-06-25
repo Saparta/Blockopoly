@@ -1,5 +1,7 @@
 package com.gameservice
 
+import com.gameservice.handlers.applyAction
+import com.gameservice.models.GameAction
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.response.respond
@@ -8,7 +10,11 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.future.await
+import kotlinx.serialization.json.Json
 
 fun Application.configureRouting() {
     routing {
@@ -27,7 +33,7 @@ fun Application.configureRouting() {
             if (!roomStarted) {
                 return@post call.respond(HttpStatusCode.InternalServerError)
             }
-            ServerManager.addRoom(RoomManager(roomId, redis.lrange(ROOM_TO_PLAYERS_PREFIX + roomId, 0, -1).await()))
+            ServerManager.addRoom(DealGame(roomId, redis.lrange(ROOM_TO_PLAYERS_PREFIX + roomId, 0, -1).await()))
             redis.publish(roomId, "START#")
             call.respond(HttpStatusCode.OK)
         }
@@ -36,9 +42,11 @@ fun Application.configureRouting() {
             webSocket{
                 val roomId = call.parameters["roomId"] ?: return@webSocket
                 val playerId = call.parameters["playerId"] ?: return@webSocket
-                ServerManager.connectToRoom(roomId, playerId, this)
-                for (msg in incoming) {
-                    call.application.environment.log.info(msg.toString())
+                val blockopolyGame = ServerManager.connectToRoom(roomId, playerId, this) ?: return@webSocket
+                incoming.consumeEach { frame ->
+                    if (frame is Frame.Text) {
+                        applyAction(blockopolyGame.await(), playerId, Json.decodeFromString<GameAction>(frame.readText()))
+                    }
                 }
             }
         }

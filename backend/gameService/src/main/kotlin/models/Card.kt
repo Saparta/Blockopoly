@@ -54,20 +54,9 @@ sealed class Card {
         override val cardType = CardType.ACTION
     }
 
-    @Serializable
-    sealed class PropertyCard() : Card() {
-        abstract val color: Color?
-    }
-
     // Client will send id of card and who's using it
     @Serializable
-    data class Property(override val id: Int, override val color: Color, override val value: Int) : PropertyCard() {
-        override val cardType = CardType.PROPERTY
-    }
-
-    // Client will send id of card, who's using it, and the color it's being placed as
-    @Serializable
-    data class WildProperty(override val id: Int, override var color: Color?, override val value: Int?, val possibleColors: Set<Color>) : PropertyCard() {
+    data class Property(override val id: Int, val colors: Set<Color>, override val value: Int?) : Card() {
         override val cardType = CardType.PROPERTY
     }
 
@@ -102,25 +91,25 @@ fun createCardMapping() : Map<Int, Card> {
         repeat(3) { id++; put(id, Card.Rent(id, 3, ActionType.WILD_RENT, Color.entries.toSet()))}
 
         // Properties
-        repeat(2) { id++; put(id, Card.Property(id, Color.BLUE, 4))}
-        repeat(3) { id++; put(id, Card.Property(id, Color.GREEN, 4))}
-        repeat(2) { id++; put(id, Card.Property(id, Color.BROWN, 1))}
-        repeat(3) { id++; put(id, Card.Property(id, Color.TURQOUISE, 1))}
-        repeat(3) { id++; put(id, Card.Property(id, Color.MAGENTA, 2))}
-        repeat(3) { id++; put(id, Card.Property(id, Color.ORANGE, 2))}
-        repeat(3) { id++; put(id, Card.Property(id, Color.RED, 3))}
-        repeat(3) { id++; put(id, Card.Property(id, Color.YELLOW, 3))}
-        repeat(4) { id++; put(id, Card.Property(id, Color.RAILROAD, 2))}
-        repeat(2) { id++; put(id, Card.Property(id, Color.UTILITY, 2))}
+        repeat(2) { id++; put(id, Card.Property(id, setOf(Color.BLUE), 4))}
+        repeat(3) { id++; put(id, Card.Property(id, setOf(Color.GREEN), 4))}
+        repeat(2) { id++; put(id, Card.Property(id, setOf(Color.BROWN), 1))}
+        repeat(3) { id++; put(id, Card.Property(id, setOf(Color.TURQOUISE), 1))}
+        repeat(3) { id++; put(id, Card.Property(id, setOf(Color.MAGENTA), 2))}
+        repeat(3) { id++; put(id, Card.Property(id, setOf(Color.ORANGE), 2))}
+        repeat(3) { id++; put(id, Card.Property(id, setOf(Color.RED), 3))}
+        repeat(3) { id++; put(id, Card.Property(id, setOf(Color.YELLOW), 3))}
+        repeat(4) { id++; put(id, Card.Property(id, setOf(Color.RAILROAD), 2))}
+        repeat(2) { id++; put(id, Card.Property(id, setOf(Color.UTILITY), 2))}
         // Wild Properties
-        repeat(1) {id++; put(id, Card.WildProperty(id, null, 4, setOf(Color.BLUE, Color.GREEN)))}
-        repeat(1) {id++; put(id, Card.WildProperty(id, null, 1, setOf(Color.BROWN, Color.TURQOUISE)))}
-        repeat(2) {id++; put(id, Card.WildProperty(id, null, 2, setOf(Color.MAGENTA, Color.ORANGE)))}
-        repeat(1) {id++; put(id, Card.WildProperty(id, null, 4, setOf(Color.RAILROAD, Color.GREEN)))}
-        repeat(1) {id++; put(id, Card.WildProperty(id, null, 4, setOf(Color.RAILROAD, Color.TURQOUISE)))}
-        repeat(1) {id++; put(id, Card.WildProperty(id, null, 2, setOf(Color.RAILROAD, Color.UTILITY)))}
-        repeat(2) {id++; put(id, Card.WildProperty(id, null, 3, setOf(Color.RED, Color.YELLOW)))}
-        repeat(2) {id++; put(id, Card.WildProperty(id, null, null, Color.entries.toSet()))}
+        repeat(1) {id++; put(id, Card.Property(id, setOf(Color.BLUE, Color.GREEN), 4))}
+        repeat(1) {id++; put(id, Card.Property(id, setOf(Color.BROWN, Color.TURQOUISE), 1))}
+        repeat(2) {id++; put(id, Card.Property(id, setOf(Color.MAGENTA, Color.ORANGE), 2))}
+        repeat(1) {id++; put(id, Card.Property(id, setOf(Color.RAILROAD, Color.GREEN), 4))}
+        repeat(1) {id++; put(id, Card.Property(id, setOf(Color.RAILROAD, Color.TURQOUISE), 2))}
+        repeat(1) {id++; put(id, Card.Property(id, setOf(Color.RAILROAD, Color.UTILITY), 2))}
+        repeat(2) {id++; put(id, Card.Property(id, setOf(Color.RED, Color.YELLOW), 3))}
+        repeat(2) {id++; put(id, Card.Property(id, Color.entries.toSet(), null))}
         // Money cards
         repeat(6) { id++; put(id, Card.Money(id, 1))}
         repeat(5) { id++; put(id, Card.Money(id, 2))}

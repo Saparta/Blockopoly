@@ -29,9 +29,9 @@ enum class MessageType {
     PLAY_ORDER,
     STATE,
 }
-
 val cardMapping = createCardMapping()
 val deck = cardMapping.values
+const val MAX_CARDS_PER_TURN = 3
 const val HOUSE_ADDITIONAL_RENT = 3
 const val HOTEL_ADDITIONAL_RENT = 4
 const val INITIAL_DRAW_COUNT = 5

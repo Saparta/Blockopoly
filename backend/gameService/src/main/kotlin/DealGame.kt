@@ -6,6 +6,7 @@ import com.gameservice.models.PropertyCollection
 import com.gameservice.models.SocketMessage
 import io.ktor.websocket.WebSocketSession
 import io.ktor.websocket.send
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,11 +16,10 @@ import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 
 // Manages 1 game room
-class RoomManager(val roomId: String, val players: List<String>) {
-    private lateinit var state : MutableStateFlow<GameState>
+class DealGame(val roomId: String, val players: List<String>) {
+    private val state = CompletableDeferred<MutableStateFlow<GameState>>()
     private val playerSockets = ConcurrentHashMap<String, WebSocketSession>()
     private val gameScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-
 
     suspend fun broadcast(message: SocketMessage) {
         for ((_, session) in playerSockets) {
@@ -34,22 +34,22 @@ class RoomManager(val roomId: String, val players: List<String>) {
                     Json.encodeToString(
                         SocketMessage(
                             MessageType.STATE.toString(),
-                            Json.encodeToString(state.value.stateVisibleToPlayer(id))
+                            Json.encodeToString(state.await().value.stateVisibleToPlayer(id))
                         )
                     )
                 )
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 playerSockets.remove(id)
                 broadcast(SocketMessage(MessageType.LEAVE.toString(), id))
             }
         }
     }
 
-     suspend fun connectPlayer(playerId: String, session: WebSocketSession) {
+     suspend fun connectPlayer(playerId: String, session: WebSocketSession) : CompletableDeferred<MutableStateFlow<GameState>> {
         if (playerId in players && !playerSockets.containsKey(playerId)) {
             playerSockets[playerId] = session
         }
-        if (playerSockets.size == players.size) {
+        if (playerSockets.size == players.size && !state.isCompleted) {
             val game = GameState()
             game.playerOrder = players.shuffled()
             game.playerAtTurn = game.playerOrder.first()
@@ -57,14 +57,15 @@ class RoomManager(val roomId: String, val players: List<String>) {
                 val hand = MutableList(INITIAL_DRAW_COUNT) { game.drawPile.removeFirst() }
                 game.playerState[id] = PlayerState(hand, PropertyCollection(), mutableListOf())
             }
-            state = MutableStateFlow(game)
+            state.complete(MutableStateFlow(game))
             broadcast(SocketMessage(MessageType.PLAY_ORDER.toString(), Json.encodeToString(game.playerOrder)))
             gameScope.launch {
-                state
+                state.await()
                     .collect { newState ->
                         broadcastState()
                     }
             }
         }
+         return state
     }
 }
