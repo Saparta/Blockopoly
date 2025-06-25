@@ -4,7 +4,9 @@ import com.gameservice.models.GameState
 import com.gameservice.models.PlayerState
 import com.gameservice.models.PropertyCollection
 import com.gameservice.models.SocketMessage
+import io.ktor.websocket.CloseReason
 import io.ktor.websocket.WebSocketSession
+import io.ktor.websocket.close
 import io.ktor.websocket.send
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -46,7 +48,22 @@ class DealGame(val roomId: String, val players: List<String>) {
     }
 
      suspend fun connectPlayer(playerId: String, session: WebSocketSession) : CompletableDeferred<MutableStateFlow<GameState>> {
-        if (playerId in players && !playerSockets.containsKey(playerId)) {
+        if (playerId in players) {
+            if (playerSockets.containsKey(playerId)) {
+                playerSockets.get(playerId)?.close(CloseReason(CloseReason.Codes.NORMAL, "Player started new connection"))
+                if (state.isCompleted) {
+                    val playOrder = state.await().value.playerOrder
+                    session.send(Json.encodeToString(SocketMessage(MessageType.PLAY_ORDER.toString(), Json.encodeToString(playOrder))))
+                    session.send(
+                        Json.encodeToString(
+                            SocketMessage(
+                                MessageType.STATE.toString(),
+                                Json.encodeToString(state.await().value.stateVisibleToPlayer(playerId))
+                            )
+                        )
+                    )
+                }
+            }
             playerSockets[playerId] = session
         }
         if (playerSockets.size == players.size && !state.isCompleted) {
