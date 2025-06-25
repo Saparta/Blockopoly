@@ -95,7 +95,7 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
                     players = players)
             ), RoomBroadcastType.INITIAL.toString())
 
-            session.send(players.last().playerId, RoomBroadcastType.HOST.toString())
+            session.send(Player(players.last().playerId, players.last().name).toString(), RoomBroadcastType.HOST.toString())
             return forwardSSe(channel, roomID, session, pubSubManager, playerID)
         }
         pubSubManager.unsubscribe(roomID, channel)
