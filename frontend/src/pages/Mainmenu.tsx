@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 const API = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
 
 const MainMenu: React.FC = () => {
+  sessionStorage.removeItem("blockopolyPID");
+  sessionStorage.removeItem("blockopolyIsHost");
   const [name, setName] = useState("");
   const [codeInput, setCodeInput] = useState("");
   const [error, setError] = useState("");
@@ -44,9 +46,11 @@ const MainMenu: React.FC = () => {
         console.warn("[SSE] INITIAL not JSON");
       }
 
-      if (payload.playerID) {
-        sessionStorage.setItem("blockopolyPID", payload.playerID);
+      if (!payload.roomCode || !payload.playerID) {
+        setError("Server response malformed.");
+        return;
       }
+
       if (isHost) {
         sessionStorage.setItem("blockopolyIsHost", "true");
       } else {
