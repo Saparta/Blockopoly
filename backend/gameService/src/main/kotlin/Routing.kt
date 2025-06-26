@@ -1,6 +1,6 @@
 package com.gameservice
 
-import com.gameservice.handlers.applyAction
+import com.gameservice.models.Command
 import com.gameservice.models.GameAction
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
@@ -42,10 +42,11 @@ fun Application.configureRouting() {
             webSocket{
                 val roomId = call.parameters["roomId"] ?: return@webSocket
                 val playerId = call.parameters["playerId"] ?: return@webSocket
-                val blockopolyGame = ServerManager.connectToRoom(roomId, playerId, this) ?: return@webSocket
+                ServerManager.connectToRoom(roomId, playerId, this)?.await() ?: return@webSocket
+                val game = ServerManager.getRoom(roomId)!!
                 incoming.consumeEach { frame ->
                     if (frame is Frame.Text) {
-                        applyAction(blockopolyGame.await(), playerId, Json.decodeFromString<GameAction>(frame.readText()))
+                        game.sendCommand(Command(playerId, Json.decodeFromString<GameAction>(frame.readText())))
                     }
                 }
             }

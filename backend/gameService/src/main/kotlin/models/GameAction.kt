@@ -3,6 +3,8 @@ package com.gameservice.models
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+data class Command(val playerId: String, val command: GameAction)
+
 @Serializable
 sealed class GameAction
 

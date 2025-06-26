@@ -13,6 +13,10 @@ object ServerManager {
         rooms.putIfAbsent(room.roomId, room)
     }
 
+    fun getRoom(roomId: String): DealGame? {
+        return rooms[roomId]
+    }
+
     suspend fun connectToRoom(roomId: String, playerId: String, session: WebSocketSession) : CompletableDeferred<MutableStateFlow<GameState>>? {
         return rooms.get(roomId)?.connectPlayer(playerId, session)
     }
