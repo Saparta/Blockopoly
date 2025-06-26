@@ -32,8 +32,6 @@ enum class MessageType {
 val cardMapping = createCardMapping()
 val deck = cardMapping.values
 const val MAX_CARDS_PER_TURN = 3
-const val HOUSE_ADDITIONAL_RENT = 3
-const val HOTEL_ADDITIONAL_RENT = 4
 const val INITIAL_DRAW_COUNT = 5
 const val FAKE_CARD_ID = 999
 val colorToRent = mapOf(

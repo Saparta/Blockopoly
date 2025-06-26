@@ -1,7 +1,5 @@
 package com.gameservice.models
 
-import com.gameservice.HOTEL_ADDITIONAL_RENT
-import com.gameservice.HOUSE_ADDITIONAL_RENT
 import com.gameservice.colorToRent
 import kotlinx.serialization.Serializable
 import java.util.UUID
@@ -38,7 +36,7 @@ class PropertyCollection {
         }
 
         removedFrom?.let {
-            if (it.properties.isEmpty()) collection.remove(it)
+            if (it.properties.isEmpty() && it.house == null && it.hotel == null) collection.remove(it)
         }
     }
 }
@@ -48,13 +46,8 @@ data class PropertySet(val id: String, val properties: MutableList<Card.Property
 
     fun calculateRent() : Int {
         if (color == null) return 0
-        if (house != null) {
-            if (hotel != null) {
-                return colorToRent[color]!![properties.size - 1] + HOUSE_ADDITIONAL_RENT + HOTEL_ADDITIONAL_RENT
-            }
-            return colorToRent[color]!![properties.size - 1] + HOUSE_ADDITIONAL_RENT
-        }
-        return colorToRent[color]!![properties.size - 1]
+        if (!isComplete) return colorToRent[color]!![properties.size - 1]
+        return colorToRent[color]!![properties.size - 1] + (house?.value ?: 0) + (hotel?.value ?: 0)
     }
 
     fun addProperty(property: Card.Property) {
@@ -65,7 +58,7 @@ data class PropertySet(val id: String, val properties: MutableList<Card.Property
     }
 
     fun removeProperty(property: Card.Property) : Boolean {
-         val wasRemoved = properties.removeIf { prop -> prop.id == property.id }
+        val wasRemoved = properties.removeIf { prop -> prop.id == property.id }
         if (!isCompleteSet()) {
             isComplete = false
         }
@@ -76,7 +69,7 @@ data class PropertySet(val id: String, val properties: MutableList<Card.Property
     }
 
     fun totalValue(): Int {
-        return properties.sumOf { prop -> prop.value ?: 0 }
+        return properties.sumOf { prop -> prop.value ?: 0 } + (house?.value ?: 0) + (hotel?.value ?: 0)
     }
 
     private fun isCompleteSet() : Boolean {
