@@ -13,8 +13,10 @@ import com.roomservice.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.RoomBroadcastType
 import com.roomservice.models.Player
 import com.roomservice.models.RoomBroadcast
+import com.roomservice.models.RoomSubChannel
 import com.roomservice.util.format
 import com.roomservice.util.forwardSSe
+import com.roomservice.util.reconnect
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.sse.ServerSSESession
 import io.lettuce.core.api.async.RedisAsyncCommands
@@ -26,7 +28,7 @@ import kotlinx.serialization.json.Json
 import java.util.UUID
 
 @Serializable
-data class JoinRoomResponse(val playerID: String = "", val name: String = "", val roomId: String = "", val roomCode: String = "", val players: List<Player> = emptyList())
+data class JoinRoomResponse(val playerId: String = "", val name: String = "", val roomId: String = "", val roomCode: String = "", val players: List<Player> = emptyList())
 
 @Serializable
 data class JoinRoomBroadcast(val playerID: String, val name: String) {
@@ -48,6 +50,12 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
     }
     val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
     val pubSubManager = call.application.attributes[PUBSUB_MANAGER_KEY]
+    val reconnectingPlayer = call.request.queryParameters["playerId"]
+
+    if (reconnectingPlayer != null) {
+        return reconnect(reconnectingPlayer, session, redis, pubSubManager)
+    }
+
     val roomID = redis.get(JOIN_CODE_TO_ROOM_PREFIX + roomCode).await()
     if (roomID == null) {
         session.send(ErrorType.ROOM_NOT_FOUND.toString(), RoomBroadcastType.ERROR.toString())
@@ -88,7 +96,7 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
             }
 
             session.send(Json.encodeToString(
-                JoinRoomResponse(playerID = playerID,
+                JoinRoomResponse(playerId = playerID,
                     name = userName,
                     roomId = roomID,
                     roomCode = roomCode,
@@ -96,7 +104,7 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
             ), RoomBroadcastType.INITIAL.toString())
 
             session.send(Player(players.last().playerId, players.last().name).toString(), RoomBroadcastType.HOST.toString())
-            return forwardSSe(channel, roomID, session, pubSubManager, playerID)
+            return forwardSSe(RoomSubChannel(channel, roomID, UUID.randomUUID().toString(), playerID),session, pubSubManager)
         }
         pubSubManager.unsubscribe(roomID, channel)
      }

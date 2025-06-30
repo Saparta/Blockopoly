@@ -6,8 +6,6 @@ import com.gameservice.models.GameState
 import com.gameservice.models.PlayMoney
 import com.gameservice.models.PlayProperty
 import com.gameservice.models.StartTurn
-import com.gameservice.models.Discard
-import com.gameservice.models.MoveProperty
 import kotlinx.coroutines.flow.MutableStateFlow
 
 fun applyAction(game: MutableStateFlow<GameState>, playerId: String, action: GameAction) : GameState {
@@ -16,7 +14,5 @@ fun applyAction(game: MutableStateFlow<GameState>, playerId: String, action: Gam
         is PlayProperty -> playProperty(game, playerId, action)
         is PlayMoney -> playForMoney(game, playerId, action)
         is EndTurn -> endTurn(game, playerId)
-        is Discard -> discard(game, playerId, action)
-        is MoveProperty -> moveProperty(game, playerId, action)
     }
 }

@@ -21,13 +21,5 @@ class EndTurn() : GameAction()
 data class PlayProperty(val id: Int, val color: Color) : GameAction()
 
 @Serializable
-@SerialName("MoveProperty")
-data class PlayProperty(val id: Int, val color: Color) : GameAction()
-
-@Serializable
-@SerialName("Discard")
-data class PlayProperty(val id: Int, val color: Color) : GameAction()
-
-@Serializable
 @SerialName("PlayMoney")
 data class PlayMoney(val id: Int) : GameAction()

@@ -4,13 +4,12 @@ import io.lettuce.core.RedisClient
 import io.lettuce.core.pubsub.RedisPubSubAdapter
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 
 class RedisPubSubManager(private val redisClient: RedisClient) {
     private val connection : StatefulRedisPubSubConnection<String, String> = redisClient.connectPubSub()
-    private val listeners = mutableMapOf<String, MutableList<Channel<String>>>()
-    private val mutex = Mutex()
+    private val listeners = ConcurrentHashMap<String, CopyOnWriteArrayList<Channel<String>>>()
 
     init {
         connection.addListener(object : RedisPubSubAdapter<String, String>() {
@@ -22,30 +21,26 @@ class RedisPubSubManager(private val redisClient: RedisClient) {
         })
     }
 
-    suspend fun subscribe(channelName: String): Channel<String> {
+    fun subscribe(channelName: String): Channel<String> {
         val newChannel = Channel<String>(Channel.UNLIMITED)
 
-        mutex.withLock {
-            val subscribers = listeners.getOrPut(channelName) { mutableListOf() }
-            subscribers.add(newChannel)
+        val subs = listeners.computeIfAbsent(channelName) { CopyOnWriteArrayList() }
+        subs.add(newChannel)
 
-            if (subscribers.size == 1) {
-                // Only subscribe at Redis level if it's the first subscriber
-                connection.async().subscribe(channelName)
-            }
+        if (subs.size == 1) {
+            connection.async().subscribe(channelName)
         }
         return newChannel
     }
 
-    suspend fun unsubscribe(channelName: String, subscriberChannel: Channel<String>) {
-        mutex.withLock {
-            listeners[channelName]?.remove(subscriberChannel)
-            subscriberChannel.close()
+    fun unsubscribe(channelName: String, subscriberChannel: Channel<String>) {
+        val subs = listeners[channelName] ?: return
+        subs.remove(subscriberChannel)
+        subscriberChannel.close()
 
-            if (listeners[channelName]?.isEmpty() == true) {
-                connection.async().unsubscribe(channelName)
-                listeners.remove(channelName)
-            }
+        if (subs.isEmpty()) {
+            listeners.remove(channelName)
+            connection.async().unsubscribe(channelName)
         }
     }
 }

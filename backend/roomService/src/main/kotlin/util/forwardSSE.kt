@@ -4,28 +4,39 @@ import com.roomservice.ROOM_BROADCAST_MSG_DELIMITER
 import com.roomservice.ROOM_BROADCAST_TYPE_DELIMITER
 import com.roomservice.RedisPubSubManager
 import com.roomservice.RoomBroadcastType
+import com.roomservice.models.RoomSubChannel
 import io.ktor.server.sse.ServerSSESession
 import io.ktor.sse.ServerSentEvent
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
-suspend fun forwardSSe(channel: Channel<String>, channelKey: String, session: ServerSSESession, pubSubManager: RedisPubSubManager, playerId: String) {
-    for (msg in channel) {
-        val (type, msg) = msg.split(ROOM_BROADCAST_TYPE_DELIMITER)
-        if (type == "START") {
-            session.send(ServerSentEvent("", type))
-            pubSubManager.unsubscribe(channelKey, channel)
-            session.close()
-        } else if (type == RoomBroadcastType.CLOSED.toString()) {
-            session.send(ServerSentEvent("", type))
-            pubSubManager.unsubscribe(channelKey, channel)
-            session.close()
-        } else if (type == RoomBroadcastType.LEAVE.toString()
-            && msg.split(ROOM_BROADCAST_MSG_DELIMITER).first() == playerId) {
-            pubSubManager.unsubscribe(channelKey, channel)
-            session.close()
-        } else if (type !in arrayOf(RoomBroadcastType.JOIN.toString(), RoomBroadcastType.LEAVE.toString())
-            || msg.split(ROOM_BROADCAST_MSG_DELIMITER).first() != playerId) {
-            session.send(ServerSentEvent(msg, type))
+suspend fun forwardSSe(roomSubChannel: RoomSubChannel, session: ServerSSESession, pubSubManager: RedisPubSubManager) {
+    withContext(Dispatchers.IO) {
+        for (msg in roomSubChannel.channel) {
+            val (type, msg) = msg.split(ROOM_BROADCAST_TYPE_DELIMITER)
+            if (type == "START") {
+                session.send(ServerSentEvent("", type))
+                pubSubManager.unsubscribe(roomSubChannel.channelKey, roomSubChannel.channel)
+                session.close()
+            } else if (type == RoomBroadcastType.RECONNECT.toString()) {
+                val (playerId, channelId) = msg.split(ROOM_BROADCAST_MSG_DELIMITER)
+                if (roomSubChannel.playerId == playerId && roomSubChannel.channelId != channelId) {
+                    session.send(ServerSentEvent("", type))
+                    pubSubManager.unsubscribe(roomSubChannel.channelKey, roomSubChannel.channel)
+                    session.close()
+                }
+            } else if (type == RoomBroadcastType.CLOSED.toString()) {
+                session.send(ServerSentEvent("", type))
+                pubSubManager.unsubscribe(roomSubChannel.channelKey, roomSubChannel.channel)
+                session.close()
+            } else if (type == RoomBroadcastType.LEAVE.toString()
+                && msg.split(ROOM_BROADCAST_MSG_DELIMITER).first() == roomSubChannel.playerId) {
+                pubSubManager.unsubscribe(roomSubChannel.channelKey, roomSubChannel.channel)
+                session.close()
+            } else if (type !in arrayOf(RoomBroadcastType.JOIN.toString(), RoomBroadcastType.LEAVE.toString())
+                || msg.split(ROOM_BROADCAST_MSG_DELIMITER).first() != roomSubChannel.playerId) {
+                session.send(ServerSentEvent(msg, type))
+            }
         }
     }
 }

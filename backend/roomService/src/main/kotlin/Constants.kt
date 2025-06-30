@@ -28,6 +28,7 @@ enum class RoomBroadcastType {
     LEAVE,
     CLOSED,
     HOST,
+    RECONNECT,
     ERROR,
 }
 enum class ErrorType {

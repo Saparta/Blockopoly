@@ -12,8 +12,10 @@ import com.roomservice.ROOM_TO_JOIN_CODE_PREFIX
 import com.roomservice.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.RoomBroadcastType
 import com.roomservice.models.Player
+import com.roomservice.models.RoomSubChannel
 import com.roomservice.util.format
 import com.roomservice.util.forwardSSe
+import com.roomservice.util.reconnect
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.sse.ServerSSESession
 import io.viascom.nanoid.NanoId
@@ -25,16 +27,22 @@ import kotlinx.serialization.json.Json
 import java.util.UUID
 
 @Serializable
-data class CreateRoomResponse(val playerID: String = "", val name: String = "", val roomID: String = "", val roomCode: String = "")
+data class CreateRoomResponse(val playerId: String = "", val name: String = "", val roomId: String = "", val roomCode: String = "")
 
 suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession) {
     val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
     val pubSubManager = call.application.attributes[PUBSUB_MANAGER_KEY]
     val userName = call.parameters["username"]
+    val playerId = call.request.queryParameters["playerId"]
     if (userName.isNullOrBlank()) {
         session.send(ErrorType.BAD_REQUEST.toString(), RoomBroadcastType.ERROR.toString())
         return session.close()
     }
+    // Player is reconnecting
+    if (playerId != null) {
+        return reconnect(playerId, session, redis, pubSubManager)
+    }
+
     val hostID = UUID.randomUUID().format()
     val roomID = UUID.randomUUID().format()
 
@@ -74,14 +82,14 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
     if (null !in arrayOf(hostStatus, nameStatus, roomToCodeStatus) && roomStatus == 1L) {
         session.send(
                 Json.encodeToString(CreateRoomResponse(
-                            playerID = hostID,
+                            playerId = hostID,
                             name = userName,
-                            roomID = roomID,
+                            roomId = roomID,
                             roomCode = code
                         )
                 ), RoomBroadcastType.INITIAL.toString())
         session.send(Player(hostID, userName).toString(), RoomBroadcastType.HOST.toString())
-        forwardSSe(channel, roomID, session, pubSubManager, hostID)
+        return forwardSSe(RoomSubChannel(channel, roomID, UUID.randomUUID().toString(), hostID),  session, pubSubManager)
     } else {
         redis.del(
             PLAYER_TO_ROOM_PREFIX + hostID,
