@@ -12,6 +12,7 @@ import com.roomservice.ROOM_START_STATUS_PREFIX
 import com.roomservice.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.RoomBroadcastType
 import com.roomservice.models.Player
+import com.roomservice.models.RedisConnections
 import com.roomservice.models.RoomBroadcast
 import com.roomservice.models.RoomSubChannel
 import com.roomservice.util.format
@@ -53,7 +54,7 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
     val reconnectingPlayer = call.request.queryParameters["playerId"]
 
     if (reconnectingPlayer != null) {
-        return reconnect(reconnectingPlayer, session, redis, pubSubManager)
+        return reconnect(reconnectingPlayer, session, RedisConnections(pubSubManager, redis))
     }
 
     val roomID = redis.get(JOIN_CODE_TO_ROOM_PREFIX + roomCode).await()
@@ -104,7 +105,7 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
             ), RoomBroadcastType.INITIAL.toString())
 
             session.send(Player(players.last().playerId, players.last().name).toString(), RoomBroadcastType.HOST.toString())
-            return forwardSSe(RoomSubChannel(channel, roomID, UUID.randomUUID().toString(), playerID),session, pubSubManager)
+            return forwardSSe(RoomSubChannel(channel, roomID, UUID.randomUUID().toString(), playerID), RedisConnections(pubSubManager, redis), session)
         }
         pubSubManager.unsubscribe(roomID, channel)
      }
@@ -118,14 +119,14 @@ suspend fun updateDatastore(playerID: String, userName: String, roomID: String, 
     redis.lrange(ROOM_TO_PLAYERS_PREFIX + roomID, 0, -1)
     redis.set(PLAYER_TO_ROOM_PREFIX + playerID, roomID)
     redis.set(PLAYER_TO_NAME_PREFIX + playerID, userName)
-    val transactionResult = redis.exec().await() ?: return Pair(false, emptyList())
+    val transactionResult = redis.exec().await() ?: return false to emptyList()
 
     if ((transactionResult[1] as ArrayList<String>).firstOrNull() != playerID ||
         (transactionResult[2] as String?) == null) {
             session.send(ErrorType.INTERNAL_SERVER_ERROR.toString(), RoomBroadcastType.ERROR.toString())
             redis.lrem(ROOM_TO_PLAYERS_PREFIX + roomID, 1, playerID)
             redis.del(PLAYER_TO_ROOM_PREFIX + playerID, PLAYER_TO_NAME_PREFIX + userName)
-        return Pair(false, emptyList())
+        return false to emptyList()
     }
-    return Pair(true, transactionResult[1])
+    return true to transactionResult[1]
 }

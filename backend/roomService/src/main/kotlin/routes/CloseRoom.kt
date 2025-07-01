@@ -10,11 +10,12 @@ import com.roomservice.models.RoomBroadcast
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
+import io.lettuce.core.api.async.RedisAsyncCommands
 import kotlinx.coroutines.future.asDeferred
 
-suspend fun closeRoomHandler(call: ApplicationCall, roomId: String? = null) {
-    val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
-    val roomId =  roomId ?: call.parameters["roomId"]
+suspend fun closeRoomHandler(call: ApplicationCall? = null, roomId: String? = null, redis: RedisAsyncCommands<String, String>? = null) {
+    val redis = redis ?: call?.application?.attributes[LETTUCE_REDIS_COMMANDS_KEY] ?: return
+    val roomId =  roomId ?: call?.parameters["roomId"] ?: return
     val players = redis.lrange(ROOM_TO_PLAYERS_PREFIX + roomId, 0, -1).asDeferred()
 
     redis.del(ROOM_TO_PLAYERS_PREFIX + roomId, ROOM_TO_JOIN_CODE_PREFIX + roomId)
@@ -22,5 +23,5 @@ suspend fun closeRoomHandler(call: ApplicationCall, roomId: String? = null) {
         redis.del(PLAYER_TO_ROOM_PREFIX + player, PLAYER_TO_NAME_PREFIX + player)
     }
     redis.publish(roomId, RoomBroadcast(RoomBroadcastType.CLOSED, "").toString())
-    call.respond(HttpStatusCode.OK)
+    call?.respond(HttpStatusCode.OK)
 }

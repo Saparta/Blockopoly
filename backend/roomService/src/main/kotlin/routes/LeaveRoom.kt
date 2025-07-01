@@ -10,6 +10,7 @@ import com.roomservice.models.Player
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
+import io.lettuce.core.api.async.RedisAsyncCommands
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.future.await
@@ -19,60 +20,57 @@ suspend fun leaveRoomHandler(call: ApplicationCall) {
     val playerID = call.parameters["playerId"]
         ?: return call.respond(HttpStatusCode.BadRequest)
     val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
-    val roomID = redis.get(PLAYER_TO_ROOM_PREFIX + playerID).await()
+    call.respond(leaveRoomHelper(playerID, redis))
+}
 
-    if (roomID == null) {
-        return call.respond(HttpStatusCode.InternalServerError)
+suspend fun leaveRoomHelper(playerId: String, redis: RedisAsyncCommands<String, String>) : HttpStatusCode {
+    val roomId = redis.get(PLAYER_TO_ROOM_PREFIX + playerId).await()
+
+    if (roomId == null) {
+        return HttpStatusCode.NotFound
     }
 
-    val hostLeaving = redis.lindex(ROOM_TO_PLAYERS_PREFIX + roomID, -1).await() == playerID
-    val removedCount = redis.lrem(ROOM_TO_PLAYERS_PREFIX + roomID, 1, playerID).await()
+    val hostLeaving = redis.lindex(ROOM_TO_PLAYERS_PREFIX + roomId, -1).await() == playerId
+    val removedCount = redis.lrem(ROOM_TO_PLAYERS_PREFIX + roomId, 1, playerId).await()
 
     if (removedCount == 0L) {
-        call.application.environment.log.warn("Failed to remove player $playerID from room $roomID — player not found in list.")
-        return call.respond(
-            HttpStatusCode.InternalServerError,
-            mapOf("error" to "Failed to leave room: player was not in the room.")
-        )
+        return HttpStatusCode.NotFound
     }
-    val roomCodeFuture = redis.get(ROOM_TO_JOIN_CODE_PREFIX + roomID).asDeferred()
-    val playerNameFuture = redis.get(PLAYER_TO_NAME_PREFIX + playerID).asDeferred()
+    val roomCodeFuture = redis.get(ROOM_TO_JOIN_CODE_PREFIX + roomId).asDeferred()
+    val playerNameFuture = redis.get(PLAYER_TO_NAME_PREFIX + playerId).asDeferred()
     val (roomCode, playerName) = awaitAll(roomCodeFuture, playerNameFuture)
 
 
     redis.del(
-        PLAYER_TO_ROOM_PREFIX + playerID,
-        PLAYER_TO_NAME_PREFIX + playerID
+        PLAYER_TO_ROOM_PREFIX + playerId,
+        PLAYER_TO_NAME_PREFIX + playerId
     ).await()
 
 
     if (roomCode != null && playerName != null) {
         redis.publish(
-            roomID,
+            roomId,
             com.roomservice.models.RoomBroadcast(
                 RoomBroadcastType.LEAVE,
-                Player(playerID, playerName).toString()
+                Player(playerId, playerName).toString()
             ).toString()
         ).await()
     }
 
-    val numberRemaining = redis.llen(ROOM_TO_PLAYERS_PREFIX + roomID).await()
+    val numberRemaining = redis.llen(ROOM_TO_PLAYERS_PREFIX + roomId).await()
     if (numberRemaining == 0L) {
-        closeRoomHandler(call, roomID)
+        closeRoomHandler(roomId = roomId, redis = redis)
+        return HttpStatusCode.OK
     }
     else if (hostLeaving) {
-        val newHostID = redis.lindex(ROOM_TO_PLAYERS_PREFIX + roomID, -1).await()
+        val newHostID = redis.lindex(ROOM_TO_PLAYERS_PREFIX + roomId, -1).await()
         val newHostName = redis.get(PLAYER_TO_NAME_PREFIX + newHostID).await()
-        redis.publish(roomID,
+        redis.publish(roomId,
             com.roomservice.models.RoomBroadcast(
                 RoomBroadcastType.HOST, Player(newHostID, newHostName).toString()
             ).toString()
         ).await()
     }
 
-    call.respond(HttpStatusCode.OK, message =  "$playerName has left the room.")
-
-
-
-
+    return HttpStatusCode.OK
 }
