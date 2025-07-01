@@ -1,14 +1,28 @@
 /*  src/pages/MainMenu.tsx  */
-import React, { useState, useEffect, useRef } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import "../style/Mainmenu.css";
 import FallingBricks from "../components/FallingBricks";
-import { useNavigate } from "react-router-dom";
+import {useNavigate} from "react-router-dom";
+import {IS_HOST_KEY, NAME_KEY, PLAYER_ID_KEY, PLAYERS_KEY, ROOM_ID_KEY} from "../constants.ts";
 
 const API = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
 
+export type initialRoomState = {
+  playerId: string,
+  name: string,
+  roomId: string,
+  roomCode: string,
+  players: Player[],
+}
+
+export interface Player {
+  playerId: string;
+  name: string;
+}
+
 const MainMenu: React.FC = () => {
-  sessionStorage.removeItem("blockopolyPID");
-  sessionStorage.removeItem("blockopolyIsHost");
+  sessionStorage.removeItem(PLAYER_ID_KEY);
+  sessionStorage.removeItem(IS_HOST_KEY);
   const [name, setName] = useState("");
   const [codeInput, setCodeInput] = useState("");
   const [error, setError] = useState("");
@@ -20,15 +34,18 @@ const MainMenu: React.FC = () => {
   const isValidName = name.trim().length > 0 && name.trim().length <= 28;
   const isValidCode = /^[A-Za-z0-9]{6}$/.test(codeInput);
 
-  const goLobby = (code: string) => {
+  const goLobby = (code: string, state: initialRoomState) => {
     if (navigatedRef.current) return;
     navigatedRef.current = true;
-    localStorage.setItem("name", name.trim());
+    sessionStorage.setItem(PLAYER_ID_KEY, state.playerId);
+    sessionStorage.setItem(PLAYERS_KEY, JSON.stringify(state.players))
+    sessionStorage.setItem(ROOM_ID_KEY, state.roomId)
+    sessionStorage.setItem(NAME_KEY, state.name);
     console.log("[NAV] → /lobby/" + code);
-    navigate(`/lobby/${code}`, { state: { name: name.trim() } });
+    navigate(`/lobby/${code}`);
   };
 
-  const openStream = (url: string, isHost: boolean) => {
+  const openStream = (url: string) => {
     esRef.current?.close();
     console.log("[SSE] open", url);
 
@@ -39,26 +56,19 @@ const MainMenu: React.FC = () => {
 
     es.addEventListener("INITIAL", (ev) => {
       console.log("[SSE] INITIAL", ev.data);
-      let payload: { playerID?: string; roomCode?: string } = {};
       try {
-        payload = JSON.parse(ev.data);
+        let payload : initialRoomState = JSON.parse(ev.data);
+
+        if (!payload.roomCode || !payload.playerId) {
+          setError("Server response malformed.");
+          return;
+        }
+
+        if (payload.roomCode) {
+          goLobby(payload.roomCode, payload);
+        }
       } catch {
         console.warn("[SSE] INITIAL not JSON");
-      }
-
-      if (!payload.roomCode || !payload.playerID) {
-        setError("Server response malformed.");
-        return;
-      }
-
-      if (isHost) {
-        sessionStorage.setItem("blockopolyIsHost", "true");
-      } else {
-        sessionStorage.setItem("blockopolyIsHost", "false");
-      }
-
-      if (payload.roomCode) {
-        goLobby(payload.roomCode);
       }
     });
 
@@ -78,7 +88,7 @@ const MainMenu: React.FC = () => {
     const url = `${API}/joinRoom/${codeInput}/${encodeURIComponent(
       name.trim()
     )}`;
-    openStream(url, false);
+    openStream(url);
   };
 
   const handleCreate = () => {
@@ -88,7 +98,7 @@ const MainMenu: React.FC = () => {
       return;
     }
     const url = `${API}/createRoom/${encodeURIComponent(name.trim())}`;
-    openStream(url, true);
+    openStream(url);
   };
 
   useEffect(() => () => esRef.current?.close(), []);

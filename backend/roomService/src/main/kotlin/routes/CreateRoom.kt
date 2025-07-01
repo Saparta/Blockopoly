@@ -23,12 +23,8 @@ import io.viascom.nanoid.NanoId
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.future.await
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.UUID
-
-@Serializable
-data class CreateRoomResponse(val playerId: String = "", val name: String = "", val roomId: String = "", val roomCode: String = "")
 
 suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession) {
     val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
@@ -82,11 +78,12 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
 
     if (null !in arrayOf(hostStatus, nameStatus, roomToCodeStatus) && roomStatus == 1L) {
         session.send(
-                Json.encodeToString(CreateRoomResponse(
+                Json.encodeToString(JoinRoomResponse(
                             playerId = hostID,
                             name = userName,
                             roomId = roomID,
-                            roomCode = code
+                            roomCode = code,
+                            players = listOf(Player(hostID, userName))
                         )
                 ), RoomBroadcastType.INITIAL.toString())
         session.send(Player(hostID, userName).toString(), RoomBroadcastType.HOST.toString())

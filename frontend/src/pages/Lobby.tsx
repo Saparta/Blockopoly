@@ -1,47 +1,30 @@
 /* src/pages/Lobby.tsx  */
-import React, { useEffect, useRef, useState, useCallback } from "react"; // Added useCallback
-import { useParams, useNavigate } from "react-router-dom";
+import React, {useCallback, useEffect, useRef, useState} from "react";
+import {useNavigate, useParams} from "react-router-dom";
 import FallingBricks from "../components/FallingBricks";
 import "../style/Lobby.css";
+import type {Player} from "./Mainmenu.tsx";
+import {NAME_KEY, PLAYER_ID_KEY, PLAYERS_KEY} from "../constants.ts";
 
 const API = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
 
-export interface Player {
-  playerId: string;
-  name: string;
-}
-
-export interface LobbyInitialPayload {
-  playerID?: string;
-  name?: string;
-  roomId?: string;
-  roomCode?: string;
-  players?: Player[];
-  host?: string;
-}
-
-const buildSSEURL = (isHost: boolean, room: string, name: string): string => {
-  if (isHost) {
-    return `${API}/createRoom/${encodeURIComponent(name)}`;
-  } else {
-    return `${API}/joinRoom/${room}/${encodeURIComponent(name)}`;
-  }
+const buildSSEURL = (room: string, name: string, playerId: string | null = null): string => {
+  return `${API}/joinRoom/${room}/${encodeURIComponent(name)}${playerId !== null ? `?playerId=${playerId}` : "" }`;
 };
 
 const Lobby: React.FC = () => {
   const { roomCode = "" } = useParams();
   const navigate = useNavigate();
 
-  const myName = localStorage.getItem("name") || "";
-  const [myPID, setMyPID] = useState<string>(
-    sessionStorage.getItem("blockopolyPID") || ""
+  const myName = sessionStorage.getItem(NAME_KEY) || "";
+  const [myPID] = useState<string>(
+    sessionStorage.getItem(PLAYER_ID_KEY) || ""
   );
-  const isHostSession = sessionStorage.getItem("blockopolyIsHost") === "true";
 
-  const [players, setPlayers] = useState<Player[]>([]);
+  console.log(`Players List: ${JSON.stringify(sessionStorage.getItem(PLAYERS_KEY))}`)
+  const [players, setPlayers] = useState<Player[]>(JSON.parse(sessionStorage.getItem(PLAYERS_KEY)!!));
   const [hostID, setHostID] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
-  const isInitialMount = useRef(true);
 
   // Use useCallback to memoize upsert, though not strictly necessary here,
   // it's a good pattern for functions passed to child components or effects.
@@ -53,9 +36,13 @@ const Lobby: React.FC = () => {
     } else {
       // Player found, update their info (e.g., name might change)
       // This is crucial for preventing true duplicates and updating existing entries.
-      return [...list.slice(0, i), p, ...list.slice(i + 1)];
+      return [...list.slice(0, i), p, ...list.slice(i + 1)]
     }
   }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem(PLAYERS_KEY, JSON.stringify(players))
+  }, [players]);
 
   useEffect(() => {
     if (!myName || !roomCode) {
@@ -66,107 +53,10 @@ const Lobby: React.FC = () => {
       return;
     }
 
-    // Defensive check: If an EventSource instance already exists in the ref,
-    // ensure it's closed before proceeding. This is critical for preventing duplicates.
-    if (esRef.current) {
-      console.log(
-        "Lobby: Closing existing EventSource connection found in ref."
-      );
-      esRef.current.close();
-      esRef.current = null;
-    }
-
-    const url = buildSSEURL(isHostSession, roomCode, myName);
+    const url = buildSSEURL(roomCode, myName, myPID);
     console.log(`Lobby: Attempting to establish new SSE connection to: ${url}`);
 
-    const es = new EventSource(url);
-    esRef.current = es; // Store the new EventSource instance
-
-    const handleInitial = (ev: MessageEvent) => {
-      if (typeof ev.data !== "string" || ev.data.trim() === "") {
-        console.warn(
-          "[SSE INITIAL] Received empty or non-string data. Skipping parse."
-        );
-        return;
-      }
-      try {
-        const payload: Partial<LobbyInitialPayload> = JSON.parse(ev.data);
-
-        if (payload.playerID) {
-          setMyPID(payload.playerID);
-          sessionStorage.setItem("blockopolyPID", payload.playerID);
-        } else {
-          console.warn(
-            "[SSE INITIAL] 'playerID' is missing in payload. Full payload:",
-            payload
-          );
-        }
-
-        if (isHostSession) {
-          console.log(
-            "[SSE INITIAL - Host] Received initial payload:",
-            payload
-          );
-          if (payload.playerID && payload.name) {
-            const hostPlayer: Player = {
-              playerId: payload.playerID,
-              name: payload.name,
-            };
-            // When host receives INITIAL, they are the only one initially.
-            // Set the players list to contain only themselves.
-            // Subsequent JOIN events will add others.
-            setPlayers([hostPlayer]);
-            setHostID(payload.playerID);
-          } else {
-            console.warn(
-              "[SSE INITIAL - Host] Missing playerID or name in host's initial payload. Setting empty players."
-            );
-            setPlayers([]);
-            setHostID(null);
-          }
-        } else {
-          console.log(
-            "[SSE INITIAL - Joiner] Received initial payload:",
-            payload
-          );
-          const list = payload.players;
-          const host = payload.host;
-
-          if (Array.isArray(list)) {
-            // For a joiner, the INITIAL event *should* contain the full list of players already in the room.
-            // Replace the current players list entirely.
-            setPlayers(list);
-          } else {
-            console.warn(
-              "[SSE INITIAL - Joiner] 'players' in payload is not an array or is undefined. Received:",
-              list,
-              "Full payload:",
-              payload
-            );
-            setPlayers([]);
-          }
-
-          if (host) {
-            setHostID(host);
-          } else {
-            console.warn(
-              "[SSE INITIAL - Joiner] 'host' ID is missing in payload. Full payload:",
-              payload
-            );
-            setHostID(null);
-          }
-        }
-      } catch (e) {
-        console.error(
-          "[SSE INITIAL parse error] Error parsing event data or unexpected payload structure:",
-          e,
-          "Raw data:",
-          ev.data
-        );
-        setPlayers([]);
-        setHostID(null);
-      }
-    };
+    esRef.current = new EventSource(url); // Store the new EventSource instance
 
     const handleJoin = (ev: MessageEvent) => {
       try {
@@ -210,12 +100,11 @@ const Lobby: React.FC = () => {
       }
     };
 
-    es.addEventListener("INITIAL", handleInitial);
-    es.addEventListener("JOIN", handleJoin);
-    es.addEventListener("LEAVE", handleLeave);
-    es.addEventListener("HOST", handleHost);
+    esRef.current.addEventListener("JOIN", handleJoin);
+    esRef.current.addEventListener("LEAVE", handleLeave);
+    esRef.current.addEventListener("HOST", handleHost);
 
-    es.onerror = (error) => {
+    esRef.current.onerror = (error) => {
       console.error("[Lobby] SSE error:", error);
       // Immediately close and clear the ref on error to prevent re-use of a broken connection
       if (esRef.current) {
@@ -237,29 +126,7 @@ const Lobby: React.FC = () => {
       }
     };
     // Add `upsert` to dependencies of main useEffect as it's a callback function
-  }, [isHostSession, roomCode, myName, navigate, upsert]);
-
-  useEffect(() => {
-    // Only run this effect's cleanup on actual component unmount, not initial render cycle
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-
-    return () => {
-      const currentPid = sessionStorage.getItem("blockopolyPID");
-      if (currentPid) {
-        console.log(
-          `Lobby: Sending leaveRoom request for PID: ${currentPid} via beacon.`
-        );
-        navigator.sendBeacon(`${API}/leaveRoom/${currentPid}`, new Blob());
-      } else {
-        console.warn(
-          "Lobby: No PID found in sessionStorage to send leaveRoom request on unmount."
-        );
-      }
-    };
-  }, []);
+  }, [ roomCode, myName, navigate, upsert]);
 
   const leaveRoom = () => {
     navigate("/");

@@ -89,10 +89,8 @@ suspend fun joinRoomHandler(call: ApplicationCall, session: ServerSSESession) {
                         JoinRoomBroadcast(playerID, userName).toString()
                 ).toString()
             )
-            val playersExceptSelf = successfulUpdate.second.subList(1, successfulUpdate.second.size)
-            val playerNamesFuture = playersExceptSelf.map {  redis.get(PLAYER_TO_NAME_PREFIX + it).asDeferred() }
-
-            val players = playerNamesFuture.awaitAll().zip(playersExceptSelf).map {
+            val playerNamesFuture = successfulUpdate.second.map {  redis.get(PLAYER_TO_NAME_PREFIX + it).asDeferred() }
+            val players = playerNamesFuture.awaitAll().zip(successfulUpdate.second).map {
                 (playerName, playerId) -> Player(playerId, playerName)
             }
 
