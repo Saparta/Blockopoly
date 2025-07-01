@@ -129,7 +129,10 @@ const Lobby: React.FC = () => {
   }, [ roomCode, myName, navigate, upsert]);
 
   const leaveRoom = () => {
-    fetch(`${API}/leaveRoom/${myPID}`, {method: 'POST'}).then(_ => navigate("/"))
+    fetch(`${API}/leaveRoom/${myPID}`, {method: 'POST'}).then(
+        r => {
+          if (r.ok) { navigate("/")}
+        })
   };
 
   const startGame = () => navigate(`/game/${roomCode}`);
