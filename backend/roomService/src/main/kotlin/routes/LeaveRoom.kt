@@ -3,7 +3,6 @@ package com.roomservice.routes
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
 import com.roomservice.PLAYER_TO_NAME_PREFIX
 import com.roomservice.PLAYER_TO_ROOM_PREFIX
-import com.roomservice.ROOM_TO_JOIN_CODE_PREFIX
 import com.roomservice.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.RoomBroadcastType
 import com.roomservice.models.Player
@@ -11,8 +10,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
 import io.lettuce.core.api.async.RedisAsyncCommands
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.future.asDeferred
 import kotlinx.coroutines.future.await
 
 
@@ -34,12 +31,9 @@ suspend fun leaveRoomHelper(playerId: String, redis: RedisAsyncCommands<String, 
     val removedCount = redis.lrem(ROOM_TO_PLAYERS_PREFIX + roomId, 1, playerId).await()
 
     if (removedCount == 0L) {
-        return HttpStatusCode.NotFound
+        return HttpStatusCode.OK
     }
-    val roomCodeFuture = redis.get(ROOM_TO_JOIN_CODE_PREFIX + roomId).asDeferred()
-    val playerNameFuture = redis.get(PLAYER_TO_NAME_PREFIX + playerId).asDeferred()
-    val (roomCode, playerName) = awaitAll(roomCodeFuture, playerNameFuture)
-
+    val playerName = redis.get(PLAYER_TO_NAME_PREFIX + playerId)
 
     redis.del(
         PLAYER_TO_ROOM_PREFIX + playerId,
@@ -47,14 +41,14 @@ suspend fun leaveRoomHelper(playerId: String, redis: RedisAsyncCommands<String, 
     ).await()
 
 
-    if (roomCode != null && playerName != null) {
+    if (playerName != null) {
         redis.publish(
             roomId,
             com.roomservice.models.RoomBroadcast(
                 RoomBroadcastType.LEAVE,
-                Player(playerId, playerName).toString()
+                Player(playerId, playerName.await()).toString()
             ).toString()
-        ).await()
+        )
     }
 
     val numberRemaining = redis.llen(ROOM_TO_PLAYERS_PREFIX + roomId).await()
@@ -69,7 +63,7 @@ suspend fun leaveRoomHelper(playerId: String, redis: RedisAsyncCommands<String, 
             com.roomservice.models.RoomBroadcast(
                 RoomBroadcastType.HOST, Player(newHostID, newHostName).toString()
             ).toString()
-        ).await()
+        )
     }
 
     return HttpStatusCode.OK
