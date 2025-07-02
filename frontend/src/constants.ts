@@ -1,5 +1,4 @@
 export const PLAYER_ID_KEY = "playerId"
-export const IS_HOST_KEY = "isHost"
 export const NAME_KEY = "name"
 export const ROOM_ID_KEY = "roomId"
 export const PLAYERS_KEY = "playersInRoom"

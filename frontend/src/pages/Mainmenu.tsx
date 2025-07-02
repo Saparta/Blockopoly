@@ -3,7 +3,7 @@ import React, {useEffect, useRef, useState} from "react";
 import "../style/Mainmenu.css";
 import FallingBricks from "../components/FallingBricks";
 import {useNavigate} from "react-router-dom";
-import {IS_HOST_KEY, NAME_KEY, PLAYER_ID_KEY, PLAYERS_KEY, ROOM_ID_KEY} from "../constants.ts";
+import {NAME_KEY, PLAYER_ID_KEY, PLAYERS_KEY, ROOM_ID_KEY} from "../constants.ts";
 
 const API = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
 
@@ -22,7 +22,6 @@ export interface Player {
 
 const MainMenu: React.FC = () => {
   sessionStorage.removeItem(PLAYER_ID_KEY);
-  sessionStorage.removeItem(IS_HOST_KEY);
   const [name, setName] = useState("");
   const [codeInput, setCodeInput] = useState("");
   const [error, setError] = useState("");
