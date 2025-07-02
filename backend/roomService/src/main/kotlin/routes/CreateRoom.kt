@@ -12,7 +12,6 @@ import com.roomservice.ROOM_TO_JOIN_CODE_PREFIX
 import com.roomservice.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.RoomBroadcastType
 import com.roomservice.models.Player
-import com.roomservice.models.RedisConnections
 import com.roomservice.models.RoomSubChannel
 import com.roomservice.util.format
 import com.roomservice.util.forwardSSe
@@ -37,7 +36,7 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
     }
     // Player is reconnecting
     if (playerId != null) {
-        return reconnect(playerId, session, RedisConnections(pubSubManager, redis))
+        return reconnect(playerId, session)
     }
 
     val hostID = UUID.randomUUID().format()
@@ -87,7 +86,7 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
                         )
                 ), RoomBroadcastType.INITIAL.toString())
         session.send(Player(hostID, userName).toString(), RoomBroadcastType.HOST.toString())
-        return forwardSSe(RoomSubChannel(channel, roomID, UUID.randomUUID().toString(), hostID), RedisConnections(pubSubManager, redis), session)
+        return forwardSSe(RoomSubChannel(channel, roomID, UUID.randomUUID().toString(), hostID), session)
     } else {
         redis.del(
             PLAYER_TO_ROOM_PREFIX + hostID,
