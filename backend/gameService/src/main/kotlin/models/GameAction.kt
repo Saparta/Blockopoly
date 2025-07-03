@@ -8,22 +8,22 @@ import kotlinx.serialization.json.Json
 data class Command(val playerId: String, val command: GameAction)
 
 @Serializable
-sealed class GameAction {
-    fun toJson(): String = Json.encodeToString(this)
+sealed interface GameAction {
+    fun toJson(): String = Json.encodeToString(serializer(),this)
 }
 
 @Serializable
 @SerialName("StartTurn")
-class StartTurn() : GameAction()
+class StartTurn() : GameAction
 
 @Serializable
 @SerialName("EndTurn")
-class EndTurn() : GameAction()
+class EndTurn() : GameAction
 
 @Serializable
 @SerialName("PlayProperty")
-data class PlayProperty(val id: Int, val color: Color) : GameAction()
+data class PlayProperty(val id: Int, val color: Color) : GameAction
 
 @Serializable
 @SerialName("PlayMoney")
-data class PlayMoney(val id: Int) : GameAction()
+data class PlayMoney(val id: Int) : GameAction
