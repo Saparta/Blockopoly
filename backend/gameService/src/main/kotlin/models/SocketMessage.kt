@@ -29,3 +29,11 @@ data class DrawMessage(val playerId: String, val cards: List<Card>) : SocketMess
 @Serializable
 @SerialName("DISCARD")
 data class DiscardMessage(val playerId: String, val card: Card) : SocketMessage()
+
+@Serializable
+@SerialName("PLACE_IN_BANK")
+data class PlaceInBankMessage(val playerId: String, val card: Card) : SocketMessage()
+
+@Serializable
+@SerialName("PLACE_PROPERTY")
+data class PlacePropertyMessage(val playerId: String, val card: Card, val propertySetId: String) : SocketMessage()

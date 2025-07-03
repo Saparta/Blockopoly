@@ -8,19 +8,24 @@ import java.util.UUID
 class PropertyCollection {
     val collection : MutableList<PropertySet> = emptyList<PropertySet>().toMutableList()
 
-    fun addProperty(property: Card.Property, withColor: Color) {
-        if (!property.colors.contains(withColor)) return
+    fun addProperty(property: Card.Property, withColor: Color) : String? {
+        if (!property.colors.contains(withColor)) return null
         val result = collection.find {
             propertySet -> propertySet.color == withColor && !propertySet.isComplete
-        }?.addProperty(property)
+        }
         if (result == null) {
+            val setId = UUID.randomUUID().toString().replace("-","")
             collection.add(
                 PropertySet(
-                    UUID.randomUUID().toString().replace("-",""),
+                    setId,
                     mutableListOf(property),
                     withColor
                 )
             )
+            return setId
+        } else {
+            result.addProperty(property)
+            return result.id
         }
     }
 
