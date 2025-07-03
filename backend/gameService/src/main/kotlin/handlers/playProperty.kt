@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 fun playProperty(game: MutableStateFlow<GameState>, playerId: String, playProperty : PlayProperty) : GameState {
     val current = game.value
-    val card = cardMapping[playProperty.id] ?: return game.value
-    if (card !is Card.Property) return game.value
+    val card = cardMapping[playProperty.id] ?: return current
+    if (card !is Card.Property) return current
     if (current.playerAtTurn != playerId || current.cardsLeftToPlay <= 0 ||
         !current.isCardInHand(playerId, card) ||
         !card.colors.contains(playProperty.color)) return current
@@ -18,9 +18,6 @@ fun playProperty(game: MutableStateFlow<GameState>, playerId: String, playProper
         state.playerState[playerId]?.hand?.removeIf { it.id == card.id }
         state.playerState[playerId]?.properties?.addProperty(card, playProperty.color)
         val cardsLeft = current.cardsLeftToPlay - 1
-        if (cardsLeft <= 0) {
-            return@let endTurn(game, playerId)
-        }
         return@let state.copy(cardsLeftToPlay = cardsLeft)
     }
 }

@@ -1,11 +1,15 @@
 package com.gameservice.handlers
 
+import com.gameservice.DealGame
+import com.gameservice.models.DrawMessage
 import com.gameservice.models.GameState
 import kotlinx.coroutines.flow.MutableStateFlow
 
-fun startTurn(game: MutableStateFlow<GameState>, playerId: String) : GameState {
+suspend fun startTurn(room: DealGame, game: MutableStateFlow<GameState>, playerId: String) : GameState {
     if (game.value.playerAtTurn == playerId) {
-        return game.value.draw()
+        val cardsDrawn = game.value.draw()
+        room.sendBroadcast(DrawMessage(playerId, cardsDrawn))
+        return game.value.copy()
     }
     return game.value
 }

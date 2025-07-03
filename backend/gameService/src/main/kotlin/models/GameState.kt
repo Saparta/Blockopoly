@@ -34,12 +34,14 @@ class GameState(var playerAtTurn: String?,
         this.cardsLeftToPlay = cardsLeftToPlay
     }
 
-    fun draw() : GameState {
-        if (playerAtTurn == null) return this
+    fun draw(passGo: Boolean = false) : List<Card> {
+        if (playerAtTurn == null) return emptyList()
         var numToDraw = 2
-        playerState[playerAtTurn]?.hand?.size?.let {
-            if (it <= 0) {
-                numToDraw = 5
+        if (!passGo) {
+            playerState[playerAtTurn]?.hand?.size?.let { handSize ->
+                if (handSize <= 0) {
+                    numToDraw = 5
+                }
             }
         }
         var cardsDrawn = 0
@@ -53,7 +55,7 @@ class GameState(var playerAtTurn: String?,
             cardsDrawn++
         }
         playerState[playerAtTurn]?.hand?.addAll(cards)
-        return this.copy()
+        return cards
     }
 
     fun copy(

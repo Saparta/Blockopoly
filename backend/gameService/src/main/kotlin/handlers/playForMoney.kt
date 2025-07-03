@@ -19,9 +19,6 @@ fun playForMoney(game: MutableStateFlow<GameState>, playerId: String, playMoney:
         state.playerState[playerId]?.hand?.removeIf { it.id == card.id }
         state.playerState[playerId]?.bank?.add(card)
         val cardsLeft = state.cardsLeftToPlay - 1
-        if (cardsLeft <= 0) {
-            return@let endTurn(game, playerId)
-        }
         return@let state.copy(cardsLeftToPlay = cardsLeft)
     }
 }
