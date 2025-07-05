@@ -1,15 +1,27 @@
 /* src/pages/Lobby.tsx  */
-import React, {useCallback, useEffect, useRef, useState} from "react";
-import {useNavigate, useParams} from "react-router-dom";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import FallingBricks from "../components/FallingBricks";
 import "../style/Lobby.css";
-import type {Player} from "./Mainmenu.tsx";
-import {NAME_KEY, PLAYER_ID_KEY, PLAYERS_KEY} from "../constants.ts";
+import type { Player } from "./Mainmenu.tsx";
+import {
+  NAME_KEY,
+  PLAYER_ID_KEY,
+  PLAYERS_KEY,
+  ROOM_ID_KEY,
+} from "../constants.ts";
 
-const API = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
+const API = import.meta.env.room_service ?? "http://localhost:8080";
+const GAME_API = import.meta.env.VITE_GAME_BASE ?? "http://localhost:8081";
 
-const buildSSEURL = (room: string, name: string, playerId: string | null = null): string => {
-  return `${API}/joinRoom/${room}/${encodeURIComponent(name)}${playerId !== null ? `?playerId=${playerId}` : "" }`;
+const buildSSEURL = (
+  room: string,
+  name: string,
+  playerId: string | null = null
+): string => {
+  return `${API}/joinRoom/${room}/${encodeURIComponent(name)}${
+    playerId !== null ? `?playerId=${playerId}` : ""
+  }`;
 };
 
 const Lobby: React.FC = () => {
@@ -17,12 +29,16 @@ const Lobby: React.FC = () => {
   const navigate = useNavigate();
 
   const myName = sessionStorage.getItem(NAME_KEY) || "";
-  const [myPID] = useState<string>(
-    sessionStorage.getItem(PLAYER_ID_KEY) || ""
-  );
+  const [myPID] = useState<string>(sessionStorage.getItem(PLAYER_ID_KEY) || "");
 
-  console.log(`Players List: ${JSON.stringify(sessionStorage.getItem(PLAYERS_KEY))}`)
-  const [players, setPlayers] = useState<Player[]>(JSON.parse(sessionStorage.getItem(PLAYERS_KEY)!!));
+  const roomId = sessionStorage.getItem(ROOM_ID_KEY) ?? "";
+
+  console.log(
+    `Players List: ${JSON.stringify(sessionStorage.getItem(PLAYERS_KEY))}`
+  );
+  const [players, setPlayers] = useState<Player[]>(
+    JSON.parse(sessionStorage.getItem(PLAYERS_KEY)!)
+  );
   const [hostID, setHostID] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
@@ -36,12 +52,12 @@ const Lobby: React.FC = () => {
     } else {
       // Player found, update their info (e.g., name might change)
       // This is crucial for preventing true duplicates and updating existing entries.
-      return [...list.slice(0, i), p, ...list.slice(i + 1)]
+      return [...list.slice(0, i), p, ...list.slice(i + 1)];
     }
   }, []);
 
   useEffect(() => {
-    sessionStorage.setItem(PLAYERS_KEY, JSON.stringify(players))
+    sessionStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
   }, [players]);
 
   useEffect(() => {
@@ -126,16 +142,35 @@ const Lobby: React.FC = () => {
       }
     };
     // Add `upsert` to dependencies of main useEffect as it's a callback function
-  }, [ roomCode, myName, navigate, upsert]);
+  }, [roomCode, myName, navigate, upsert, myPID]);
 
   const leaveRoom = () => {
-    fetch(`${API}/leaveRoom/${myPID}`, {method: 'POST'}).then(
-        r => {
-          if (r.ok) { navigate("/")}
-        })
+    fetch(`${API}/leaveRoom/${myPID}`, { method: "POST" }).then((r) => {
+      if (r.ok) {
+        navigate("/");
+      }
+    });
   };
 
-  const startGame = () => navigate(`/game/${roomCode}`);
+  const startGame = async () => {
+    try {
+      const res = await fetch(`${GAME_API}/start/${roomId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hostId: myPID }), // send anything your API needs
+      });
+
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+
+      // 🛫 ship ’em to the play view
+      navigate(`/play/${roomCode}`);
+    } catch (err) {
+      console.error("[startGame] Couldn’t start:", err);
+      alert("Could not start the game – check the server log.");
+    }
+  };
 
   const hostName =
     Array.isArray(players) && typeof hostID === "string"

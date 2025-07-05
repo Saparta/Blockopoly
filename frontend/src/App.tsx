@@ -74,6 +74,15 @@ function App() {
               </AnimatedRoute>
             }
           />
+
+          <Route
+            path="/play/:roomCode"
+            element={
+              <AnimatedRoute>
+                <PlayScreen />
+              </AnimatedRoute>
+            }
+          />
         </Routes>
       </AnimatePresence>
     </Router>
