@@ -11,6 +11,7 @@ import com.roomservice.ROOM_BROADCAST_MSG_DELIMITER
 import com.roomservice.ROOM_START_STATUS_PREFIX
 import com.roomservice.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.RoomBroadcastType
+import com.roomservice.SECS_IN_HOUR
 import com.roomservice.models.Player
 import com.roomservice.models.RoomBroadcast
 import com.roomservice.models.RoomSubChannel
@@ -114,16 +115,16 @@ suspend fun updateDatastore(playerID: String, userName: String, roomID: String, 
     redis.multi().await()
     redis.lpush(ROOM_TO_PLAYERS_PREFIX + roomID, playerID)
     redis.lrange(ROOM_TO_PLAYERS_PREFIX + roomID, 0, -1)
-    redis.set(PLAYER_TO_ROOM_PREFIX + playerID, roomID)
-    redis.set(PLAYER_TO_NAME_PREFIX + playerID, userName)
+    redis.setex(PLAYER_TO_ROOM_PREFIX + playerID, SECS_IN_HOUR, roomID)
+    redis.setex(PLAYER_TO_NAME_PREFIX + playerID, SECS_IN_HOUR, userName)
     val transactionResult = redis.exec().await() ?: return false to emptyList()
 
-    if ((transactionResult[1] as ArrayList<String>).firstOrNull() != playerID ||
-        (transactionResult[2] as String?) == null) {
+    if ((transactionResult[2] as ArrayList<String>).firstOrNull() != playerID ||
+        (transactionResult[3] as String?) == null) {
             session.send(ErrorType.INTERNAL_SERVER_ERROR.toString(), RoomBroadcastType.ERROR.toString())
             redis.lrem(ROOM_TO_PLAYERS_PREFIX + roomID, 1, playerID)
             redis.del(PLAYER_TO_ROOM_PREFIX + playerID, PLAYER_TO_NAME_PREFIX + userName)
         return false to emptyList()
     }
-    return true to transactionResult[1]
+    return true to transactionResult[2]
 }

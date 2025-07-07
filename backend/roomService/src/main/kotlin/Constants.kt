@@ -41,3 +41,4 @@ enum class ErrorType {
 }
 const val ROOM_BROADCAST_TYPE_DELIMITER = "#"
 const val ROOM_BROADCAST_MSG_DELIMITER = ":"
+const val SECS_IN_HOUR = (60 * 60).toLong()

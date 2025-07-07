@@ -11,6 +11,7 @@ import com.roomservice.PUBSUB_MANAGER_KEY
 import com.roomservice.ROOM_TO_JOIN_CODE_PREFIX
 import com.roomservice.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.RoomBroadcastType
+import com.roomservice.SECS_IN_HOUR
 import com.roomservice.models.Player
 import com.roomservice.models.RoomSubChannel
 import com.roomservice.util.format
@@ -42,9 +43,10 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
     val hostID = UUID.randomUUID().format()
     val roomID = UUID.randomUUID().format()
 
-    val hostFuture = redis.set(PLAYER_TO_ROOM_PREFIX + hostID, roomID).asDeferred()
-    val nameFuture = redis.set(PLAYER_TO_NAME_PREFIX + hostID, userName).asDeferred()
+    val hostFuture = redis.setex(PLAYER_TO_ROOM_PREFIX + hostID, SECS_IN_HOUR, roomID).asDeferred()
+    val nameFuture = redis.setex(PLAYER_TO_NAME_PREFIX + hostID, SECS_IN_HOUR, userName).asDeferred()
     val roomFuture = redis.lpush(ROOM_TO_PLAYERS_PREFIX + roomID, hostID).asDeferred()
+    redis.expire(ROOM_TO_PLAYERS_PREFIX + roomID, SECS_IN_HOUR)
 
     val maxRetries = 3
     var genCodeAttempts = 0
@@ -66,7 +68,7 @@ suspend fun createRoomHandler(call: ApplicationCall, session : ServerSSESession)
 
     val channel = pubSubManager.subscribe(roomID)
 
-    val roomToCodeFuture = redis.set(ROOM_TO_JOIN_CODE_PREFIX + roomID, code).asDeferred()
+    val roomToCodeFuture = redis.setex(ROOM_TO_JOIN_CODE_PREFIX + roomID, SECS_IN_HOUR, code).asDeferred()
 
     val (hostStatus, nameStatus, roomStatus, roomToCodeStatus) = awaitAll(
         hostFuture,
