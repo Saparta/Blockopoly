@@ -7,7 +7,7 @@ import kotlinx.coroutines.channels.Channel
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
-class RedisPubSubManager(private val redisClient: RedisClient) {
+class RedisPubSubManager(redisClient: RedisClient) {
     private val connection : StatefulRedisPubSubConnection<String, String> = redisClient.connectPubSub()
     private val listeners = ConcurrentHashMap<String, CopyOnWriteArrayList<Channel<String>>>()
 
