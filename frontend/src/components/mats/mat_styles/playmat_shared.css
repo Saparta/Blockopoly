@@ -1,0 +1,62 @@
+/* ------------- background mat image ------------- */
+.mat-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* whole mat always visible */
+  pointer-events: none;
+}
+
+/* ------------- deck / discard hit-box ---------- */
+.zone {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+/* ------------- player rectangle ---------------- */
+.player-board {
+  position: absolute; /* coordinates set in mat-specific CSS */
+  background: rgba(0, 0, 0, 0.25);
+  border: 2px solid #ffffff55;
+  border-radius: 8px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.45);
+  overflow: hidden; /* clip inner slots & cards */
+  height: 12%;
+}
+
+/* ------------- card holder (auto-scale) -------- */
+.card-holder {
+  /* wrap every <Card> with this */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-holder img {
+  width: 165px;
+  height: 240px;
+  max-width: 100%; /* auto-shrink when rectangle gets small */
+  max-height: 100%;
+}
+
+/* hand modal common look (kept) */
+.hand-modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 60;
+}
+.hand-modal-inner {
+  width: min(92vw, 640px);
+  height: 65vh;
+  overflow-y: auto;
+  background: #222;
+  border-radius: 12px;
+  padding: 1rem;
+  color: #fff;
+}

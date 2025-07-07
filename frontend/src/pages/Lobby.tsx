@@ -9,7 +9,7 @@ import {
   PLAYER_ID_KEY,
   PLAYERS_KEY,
   ROOM_ID_KEY,
-} from "../constants.ts";
+} from "../constants/constants.ts";
 
 const API = import.meta.env.room_service ?? "http://localhost:8080";
 const GAME_API = import.meta.env.VITE_GAME_BASE ?? "http://localhost:8081";

@@ -1,19 +1,24 @@
 /*  src/pages/MainMenu.tsx  */
-import React, {useEffect, useRef, useState} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "../style/Mainmenu.css";
 import FallingBricks from "../components/FallingBricks";
-import {useNavigate} from "react-router-dom";
-import {NAME_KEY, PLAYER_ID_KEY, PLAYERS_KEY, ROOM_ID_KEY} from "../constants.ts";
+import { useNavigate } from "react-router-dom";
+import {
+  NAME_KEY,
+  PLAYER_ID_KEY,
+  PLAYERS_KEY,
+  ROOM_ID_KEY,
+} from "../constants/constants.ts";
 
 const API = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
 
 export type initialRoomState = {
-  playerId: string,
-  name: string,
-  roomId: string,
-  roomCode: string,
-  players: Player[],
-}
+  playerId: string;
+  name: string;
+  roomId: string;
+  roomCode: string;
+  players: Player[];
+};
 
 export interface Player {
   playerId: string;
@@ -37,8 +42,8 @@ const MainMenu: React.FC = () => {
     if (navigatedRef.current) return;
     navigatedRef.current = true;
     sessionStorage.setItem(PLAYER_ID_KEY, state.playerId);
-    sessionStorage.setItem(PLAYERS_KEY, JSON.stringify(state.players))
-    sessionStorage.setItem(ROOM_ID_KEY, state.roomId)
+    sessionStorage.setItem(PLAYERS_KEY, JSON.stringify(state.players));
+    sessionStorage.setItem(ROOM_ID_KEY, state.roomId);
     sessionStorage.setItem(NAME_KEY, state.name);
     console.log("[NAV] → /lobby/" + code);
     navigate(`/lobby/${code}`);
@@ -56,7 +61,7 @@ const MainMenu: React.FC = () => {
     es.addEventListener("INITIAL", (ev) => {
       console.log("[SSE] INITIAL", ev.data);
       try {
-        let payload : initialRoomState = JSON.parse(ev.data);
+        let payload: initialRoomState = JSON.parse(ev.data);
 
         if (!payload.roomCode || !payload.playerId) {
           setError("Server response malformed.");

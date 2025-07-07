@@ -1,0 +1,35 @@
+@import "/frontend/src/components/mats/mat_styles/playmat_shared.css";
+
+/* deck & discard */
+.playmat3-wrapper .draw-pile {
+  top: 50%;
+  left: 44%;
+  width: 6%;
+}
+.playmat3-wrapper .discard-pile {
+  top: 50%;
+  left: 54%;
+  width: 6%;
+  height: 10%;
+}
+
+/* player rectangles – measured once in Figma (W × H as % of full mat) */
+.playmat3-wrapper .player-board.p1 {
+  bottom: 4%;
+  left: 6%;
+  width: 24%;
+  height: 18%;
+}
+.playmat3-wrapper .player-board.p2 {
+  top: 4%;
+  left: 50%;
+  width: 24%;
+  height: 18%;
+  transform: translateX(-50%);
+}
+.playmat3-wrapper .player-board.p3 {
+  bottom: 4%;
+  right: 6%;
+  width: 24%;
+  height: 18%;
+}

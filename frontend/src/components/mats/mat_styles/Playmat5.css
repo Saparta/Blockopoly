@@ -1,0 +1,98 @@
+/* ------------- shared (same tokens as other mats) -------------- */
+.mat-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.zone {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+.player-board {
+  position: absolute;
+  width: 18%;
+}
+.property-slot,
+.bank-slot {
+  width: 100%;
+  height: 36%;
+  margin-bottom: 4%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px dashed #fff3;
+  border-radius: 6px;
+}
+.hand-toggle {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  background: #1a1a1a;
+  color: #fff;
+  border: 1px solid #fff5;
+  cursor: pointer;
+}
+.hand-modal {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-content: center;
+  z-index: 60;
+}
+.hand-modal-inner {
+  width: min(92vw, 640px);
+  height: 65vh;
+  overflow-y: auto;
+  background: #222;
+  border-radius: 12px;
+  padding: 1rem;
+  color: #fff;
+}
+
+/* ------------- mat-specific coordinates (adjust as needed) ---------------- */
+
+/* Deck & Discard (center) */
+.playmat5-wrapper .draw-pile {
+  top: 50%;
+  left: 45%;
+  width: 6%;
+}
+.playmat5-wrapper .discard-pile {
+  top: 50%;
+  left: 55%;
+  width: 6%;
+  height: 10%;
+}
+
+/* Player 1 – bottom-left */
+.playmat5-wrapper .player-board.p1 {
+  bottom: 3%;
+  left: 3%;
+}
+
+/* Player 2 – top-left */
+.playmat5-wrapper .player-board.p2 {
+  top: 3%;
+  left: 3%;
+}
+
+/* Player 3 – top-center */
+.playmat5-wrapper .player-board.p3 {
+  top: 3%;
+  left: 50%;
+  transform: translate(-50%, 0);
+}
+
+/* Player 4 – top-right */
+.playmat5-wrapper .player-board.p4 {
+  top: 3%;
+  right: 3%;
+}
+
+/* Player 5 – bottom-right */
+.playmat5-wrapper .player-board.p5 {
+  bottom: 3%;
+  right: 3%;
+}

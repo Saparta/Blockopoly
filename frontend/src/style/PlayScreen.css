@@ -1,0 +1,18 @@
+/* playscreen.css */
+html,
+body,
+#root {
+  height: 100%;
+}
+.board-shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh; /* full viewport */
+  overflow: hidden; /* no scrollbars */
+}
+.board-svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* <─ keep whole board visible */
+  object-position: center;
+}
