@@ -25,7 +25,7 @@ class PropertyCollection {
             return setId
         } else {
             result.addProperty(property)
-            return result.id
+            return result.propertySetId
         }
     }
 
@@ -47,7 +47,7 @@ class PropertyCollection {
 }
 
 @Serializable
-data class PropertySet(val id: String, val properties: MutableList<Card.Property>, var color: Color?, var house: Card.Action? = null, var hotel: Card.Action? = null, var isComplete: Boolean = false) {
+data class PropertySet(val propertySetId: String, val properties: MutableList<Card.Property>, var color: Color?, var house: Card.Action? = null, var hotel: Card.Action? = null, var isComplete: Boolean = false) {
 
     fun calculateRent() : Int {
         if (color == null) return 0

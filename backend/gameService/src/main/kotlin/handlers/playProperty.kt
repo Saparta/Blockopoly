@@ -18,7 +18,7 @@ suspend fun playProperty(room: DealGame, game: MutableStateFlow<GameState>, play
 
     return current.let { state ->
         state.playerState[playerId]!!.hand.removeIf { it.id == card.id }
-        val propertySetId = state.playerState[playerId]!!.properties.addProperty(card, playProperty.color)
+        val propertySetId = state.playerState[playerId]!!.propertyCollection.addProperty(card, playProperty.color)
         room.sendBroadcast(PlacePropertyMessage(playerId, card, propertySetId!!))
         val cardsLeft = current.cardsLeftToPlay - 1
         return@let state.copy(cardsLeftToPlay = cardsLeft)

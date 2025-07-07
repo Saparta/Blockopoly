@@ -1,5 +1,6 @@
 package com.gameservice.models
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -31,6 +32,7 @@ enum class ActionType {
 }
 
 @Serializable
+@SerialName("CARD")
 sealed class Card {
     abstract val id: Int
     abstract val cardType: CardType
@@ -38,30 +40,35 @@ sealed class Card {
 
 
     @Serializable
+    @SerialName("ACTION_CARD")
     sealed class ActionCard() : Card() {
         abstract val actionType: ActionType
     }
 
     // Client will send id, who's using it, and optionally what player/properties/sets it's being used on
     @Serializable
+    @SerialName("GENERAL_ACTION")
     data class Action(override val id: Int, override val value: Int, override val actionType: ActionType) : ActionCard() {
         override val cardType = CardType.ACTION
     }
 
     // Client will send id, who's using it, and the color being used
     @Serializable
+    @SerialName("RENT_ACTION")
     data class Rent(override val id: Int, override val value: Int, override val actionType : ActionType, val colors: Set<Color>) : ActionCard() {
         override val cardType = CardType.ACTION
     }
 
     // Client will send id of card and who's using it
     @Serializable
+    @SerialName("PROPERTY")
     data class Property(override val id: Int, val colors: Set<Color>, override val value: Int?) : Card() {
         override val cardType = CardType.PROPERTY
     }
 
     // Client will send id of card and who's using it
     @Serializable
+    @SerialName("MONEY")
     data class Money(override val id: Int, override val value: Int) : Card() {
         override val cardType = CardType.MONEY
     }
