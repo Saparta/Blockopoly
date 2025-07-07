@@ -9,6 +9,7 @@ import com.gameservice.models.PlayOrderMessage
 import com.gameservice.models.PlayerState
 import com.gameservice.models.PropertyCollection
 import com.gameservice.models.SocketMessage
+import com.gameservice.models.StartTurn
 import com.gameservice.models.StateMessage
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.WebSocketSession
@@ -17,11 +18,12 @@ import io.ktor.websocket.send
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 
 // Manages 1 game room
@@ -31,6 +33,8 @@ class DealGame(val roomId: String, val players: List<String>) {
     private val broadcastChannel = Channel<SocketMessage>(capacity = Channel.UNLIMITED)
     private val playerSockets = ConcurrentHashMap<String, WebSocketSession>()
     private val gameScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val initialBroadcastDone = CompletableDeferred<Unit>()
+
 
     init {
         // Process commands from websocket sequentially.
@@ -70,11 +74,11 @@ class DealGame(val roomId: String, val players: List<String>) {
         }
     }
 
-    private suspend fun broadcastState() {
+    private suspend fun broadcastState(newState: GameState) {
         for ((id, session) in playerSockets) {
             try {
                 session.send(
-                    StateMessage(state.await().value.stateVisibleToPlayer(id)).toJson()
+                    StateMessage(newState.stateVisibleToPlayer(id)).toJson()
                 )
             } catch (_: Exception) {
                 playerSockets.remove(id)
@@ -83,6 +87,7 @@ class DealGame(val roomId: String, val players: List<String>) {
         }
     }
 
+     @OptIn(FlowPreview::class)
      suspend fun connectPlayer(playerId: String, session: WebSocketSession) : CompletableDeferred<MutableStateFlow<GameState>>? {
         if (playerId in players) {
             if (playerSockets.containsKey(playerId)) {
@@ -107,12 +112,22 @@ class DealGame(val roomId: String, val players: List<String>) {
             state.complete(MutableStateFlow(game))
             broadcast(PlayOrderMessage(game.playerOrder))
 
-            withContext(Dispatchers.IO + SupervisorJob()) {
+            gameScope.launch {
                 state.await()
+                    .debounce(100)
                     .collect { newState ->
-                        broadcastState()
+                        broadcastState(newState)
+                        if (!initialBroadcastDone.isCompleted) {
+                            initialBroadcastDone.complete(Unit)
+                        }
                     }
             }
+
+            gameScope.launch {
+                initialBroadcastDone.await()
+                sendCommand(Command(game.playerAtTurn!!, StartTurn()))
+            }
+
         }
          return state
     }

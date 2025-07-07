@@ -27,6 +27,10 @@ data class StateMessage(val gameState: VisibleGameState) : SocketMessage
 data class DrawMessage(val playerId: String, val cards: List<Card>) : SocketMessage
 
 @Serializable
+@SerialName("START_TURN")
+data class StartMessage(val playerId: String) : SocketMessage
+
+@Serializable
 @SerialName("DISCARD")
 data class DiscardMessage(val playerId: String, val card: Card) : SocketMessage
 

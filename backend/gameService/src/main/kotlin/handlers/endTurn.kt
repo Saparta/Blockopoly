@@ -22,5 +22,7 @@ suspend fun endTurn(room: DealGame, game: MutableStateFlow<GameState>, playerId:
         }
     }
     current.discardPile.addAll(removedCards)
-    return current.copy(playerAtTurn = nextPlayer, cardsLeftToPlay = MAX_CARDS_PER_TURN, discardPile = current.discardPile)
+    current.playerAtTurn = nextPlayer
+    current.cardsLeftToPlay = MAX_CARDS_PER_TURN
+    return startTurn(room, game, nextPlayer)
 }
