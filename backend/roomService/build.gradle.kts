@@ -38,6 +38,8 @@ dependencies {
     implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.10.2")
     implementation("io.ktor:ktor-server-sse:3.1.3")
+    implementation("io.insert-koin:koin-ktor:4.0.3")
+    implementation("io.insert-koin:koin-logger-slf4j:4.0.3")
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

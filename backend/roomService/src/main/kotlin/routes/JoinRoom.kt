@@ -119,12 +119,12 @@ suspend fun updateDatastore(playerID: String, userName: String, roomID: String, 
     redis.setex(PLAYER_TO_NAME_PREFIX + playerID, SECS_IN_HOUR, userName)
     val transactionResult = redis.exec().await() ?: return false to emptyList()
 
-    if ((transactionResult[2] as ArrayList<String>).firstOrNull() != playerID ||
-        (transactionResult[3] as String?) == null) {
+    if ((transactionResult[1] as ArrayList<String>).firstOrNull() != playerID ||
+        (transactionResult[2] as String?) == null) {
             session.send(ErrorType.INTERNAL_SERVER_ERROR.toString(), RoomBroadcastType.ERROR.toString())
             redis.lrem(ROOM_TO_PLAYERS_PREFIX + roomID, 1, playerID)
             redis.del(PLAYER_TO_ROOM_PREFIX + playerID, PLAYER_TO_NAME_PREFIX + userName)
         return false to emptyList()
     }
-    return true to transactionResult[2]
+    return true to transactionResult[1]
 }

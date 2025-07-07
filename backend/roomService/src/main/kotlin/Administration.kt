@@ -14,6 +14,10 @@ import io.ktor.server.sse.SSE
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.async.RedisAsyncCommands
+import org.koin.ktor.ext.get
+import org.koin.ktor.ext.inject
+import org.koin.ktor.plugin.Koin
+import org.koin.logger.slf4jLogger
 import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureAdministration() {
@@ -37,18 +41,20 @@ fun Application.configureAdministration() {
         }
     }
 
-    val redisHost = environment.config.propertyOrNull("ktor.redis.host")?.getString() ?: "localhost"
-    val redisPort = environment.config.propertyOrNull("ktor.redis.port")?.getString()?.toIntOrNull() ?: 6379
-    val redisUri = "redis://$redisHost:$redisPort"
+    // Install Koin
+    install(Koin) {
+        slf4jLogger()
+        modules(redisModule(environment))
+    }
 
-    val redisClient = RedisClient.create(redisUri)
-    val connection: StatefulRedisConnection<String, String> = redisClient.connect()
-    val asyncCommands: RedisAsyncCommands<String, String> = connection.async()
+    val redisClient: RedisClient by inject()
+    val connection: StatefulRedisConnection<String, String> by inject()
+    val asyncCommands: RedisAsyncCommands<String, String> by inject()
 
     attributes.put(LETTUCE_REDIS_CLIENT_KEY, redisClient)
     attributes.put(LETTUCE_REDIS_CONNECTION_KEY, connection)
-    attributes.put(LETTUCE_REDIS_COMMANDS_KEY, asyncCommands)
-    attributes.put(PUBSUB_MANAGER_KEY, RedisPubSubManager(redisClient))
+    attributes.put(LETTUCE_REDIS_COMMANDS_KEY,  asyncCommands)
+    attributes.put(PUBSUB_MANAGER_KEY, get<RedisPubSubManager>())
 
     monitor.subscribe(ApplicationStopping) {
         connection.close()
