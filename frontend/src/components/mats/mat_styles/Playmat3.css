@@ -1,4 +1,4 @@
-@import "/frontend/src/components/mats/mat_styles/playmat_shared.css";
+@import "./playmat_shared.css";
 
 /* deck & discard */
 .playmat3-wrapper .draw-pile {
