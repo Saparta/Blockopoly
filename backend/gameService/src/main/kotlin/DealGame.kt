@@ -6,8 +6,6 @@ import com.gameservice.models.DrawMessage
 import com.gameservice.models.GameState
 import com.gameservice.models.LeaveMessage
 import com.gameservice.models.PlayOrderMessage
-import com.gameservice.models.PlayerState
-import com.gameservice.models.PropertyCollection
 import com.gameservice.models.SocketMessage
 import com.gameservice.models.StartTurn
 import com.gameservice.models.StateMessage
@@ -78,7 +76,7 @@ class DealGame(val roomId: String, val players: List<String>) {
         for ((id, session) in playerSockets) {
             try {
                 session.send(
-                    StateMessage(newState.stateVisibleToPlayer(id)).toJson()
+                    StateMessage(newState.getVisibleGameState(id)).toJson()
                 )
             } catch (_: Exception) {
                 playerSockets.remove(id)
@@ -95,20 +93,14 @@ class DealGame(val roomId: String, val players: List<String>) {
                 if (state.isCompleted) {
                     val playOrder = state.await().value.playerOrder
                     session.send(PlayOrderMessage(playOrder).toJson())
-                    session.send(StateMessage(state.await().value.stateVisibleToPlayer(playerId)).toJson())
+                    session.send(StateMessage(state.await().value.getVisibleGameState(playerId)).toJson())
                 }
             }
             playerSockets[playerId] = session
         } else return null
 
         if (playerSockets.size == players.size && !state.isCompleted) {
-            val game = GameState()
-            game.playerOrder = players.shuffled()
-            game.playerAtTurn = game.playerOrder.first()
-            players.forEach { id ->
-                val hand = MutableList(INITIAL_DRAW_COUNT) { game.drawPile.removeFirst() }
-                game.playerState[id] = PlayerState(hand, PropertyCollection(), mutableListOf())
-            }
+            val game = GameState(players)
             state.complete(MutableStateFlow(game))
             broadcast(PlayOrderMessage(game.playerOrder))
 

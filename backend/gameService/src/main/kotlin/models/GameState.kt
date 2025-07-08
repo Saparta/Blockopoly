@@ -1,5 +1,6 @@
 package com.gameservice.models
 
+import com.gameservice.INITIAL_DRAW_COUNT
 import com.gameservice.MAX_CARDS_PER_TURN
 import com.gameservice.deck
 import kotlinx.serialization.Serializable
@@ -11,16 +12,25 @@ class GameState(var playerAtTurn: String?,
                 val discardPile: MutableList<Card>,
                 val playerState: MutableMap<String, PlayerState>) {
 
-    lateinit var playerOrder : List<String>
+    var playerOrder : List<String> = emptyList()
     var cardsLeftToPlay: Int = MAX_CARDS_PER_TURN
+    var playerPendingActions : MutableMap<String, MutableList<String>> = hashMapOf()
 
-    constructor() : this(
+    constructor(players: List<String>) : this(
         null,
         null,
         deck.shuffled().toMutableList(),
         mutableListOf(),
         mutableMapOf()
-    )
+    ) {
+        playerOrder = players.shuffled()
+        playerAtTurn = playerOrder.first()
+        players.forEach { id ->
+            val hand = MutableList(INITIAL_DRAW_COUNT) { drawPile.removeFirst() }
+            this.playerState[id] = PlayerState(hand, PropertyCollection(), mutableListOf())
+            this.playerPendingActions[id] = mutableListOf<String>()
+        }
+    }
 
     constructor(
         playerAtTurn: String?,
@@ -29,9 +39,12 @@ class GameState(var playerAtTurn: String?,
         discardPile: MutableList<Card>,
         playerState: MutableMap<String, PlayerState>,
         playerOrder : List<String>,
-        cardsLeftToPlay : Int) : this(playerAtTurn, winningPlayer, drawPile, discardPile, playerState) {
+        cardsLeftToPlay : Int,
+        playerPendingActions: MutableMap<String, MutableList<String>>
+    ) : this(playerAtTurn, winningPlayer, drawPile, discardPile, playerState) {
         this.playerOrder = playerOrder
         this.cardsLeftToPlay = cardsLeftToPlay
+        this.playerPendingActions = playerPendingActions
     }
 
     fun draw(passGo: Boolean = false) : List<Card> {
@@ -65,16 +78,17 @@ class GameState(var playerAtTurn: String?,
         discardPile: MutableList<Card> = this.discardPile,
         playerState: MutableMap<String, PlayerState> = this.playerState,
         playerOrder: List<String> = this.playerOrder,
-        cardsLeftToPlay: Int = this.cardsLeftToPlay
+        cardsLeftToPlay: Int = this.cardsLeftToPlay,
+        playerPendingActions : MutableMap<String, MutableList<String>> = this.playerPendingActions
     ): GameState {
-        return GameState(playerAtTurn, winningPlayer, drawPile, discardPile, playerState, playerOrder, cardsLeftToPlay)
+        return GameState(playerAtTurn, winningPlayer, drawPile, discardPile, playerState, playerOrder, cardsLeftToPlay, playerPendingActions)
     }
 
     fun isCardInHand(player: String, card: Card): Boolean {
         return playerState[player]?.hand?.find { it.id == card.id } != null
     }
 
-    fun stateVisibleToPlayer(playerId: String) : VisibleGameState {
+    fun getVisibleGameState(playerId: String) : VisibleGameState {
         return VisibleGameState(this, playerId)
     }
 }
