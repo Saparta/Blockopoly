@@ -32,6 +32,6 @@ RUN addgroup -S ktor && adduser -S ktor -G ktor
 USER ktor
 
 EXPOSE 8080
-ENV JAVA_OPTS="-XX:+UseSerialGC -Xms128m -Xmx256m"
+ENV JAVA_OPTS="-Xms128m -Xmx256m"
 ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar app.jar"]
 

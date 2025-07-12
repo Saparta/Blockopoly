@@ -2,7 +2,7 @@
 
 Based on the Monopoly Deal game
 
-Bleu Sanchez - test push
-Stephen Syl-Akinwale - test push
-Lukman Moyosore - test push
-Joel Valerio - test push
+Stephen Syl-Akinwale  
+Joel Valerio  
+Bleu Sanchez  
+Lukman Moyosore  
