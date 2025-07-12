@@ -40,4 +40,12 @@ data class PlaceInBankMessage(val playerId: String, val card: Card) : SocketMess
 
 @Serializable
 @SerialName("PLACE_PROPERTY")
-data class PlacePropertyMessage(val playerId: String, val card: Card, val propertySetId: String) : SocketMessage
+data class PlacePropertyMessage(val playerId: String, val card: Card.Property, val propertySetId: String) : SocketMessage
+
+@Serializable
+@SerialName("RENT_REQUEST")
+data class RentRequestMessage(val requester: String, val targets: List<String>, val cardsUsed: List<Int>, val amount: Int) : SocketMessage
+
+@Serializable
+@SerialName("PAYMENT_EARNINGS")
+data class PaymentEarningsMessage(val receiver: String, val giver: String, val propertyToDestination: Map<Int, String>, val bankCards: Set<Int>) : SocketMessage

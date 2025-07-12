@@ -4,10 +4,10 @@ import com.gameservice.FAKE_CARD
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class PlayerState(val hand: MutableList<Card>, val propertyCollection: PropertyCollection, val bank: MutableList<Card>) {
+data class PlayerState(val hand: MutableList<Card>, val propertyCollection: PropertyCollection, val bank: MutableSet<Card>) {
     fun getStateWithHandHidden() : PlayerState {
         return PlayerState(
-            MutableList(hand.size, { FAKE_CARD }),
+            MutableList(hand.size) { FAKE_CARD },
             propertyCollection,
             bank
         )

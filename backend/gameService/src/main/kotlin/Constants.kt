@@ -30,6 +30,7 @@ val cardMapping = createCardMapping()
 val deck = cardMapping.values
 const val MAX_CARDS_PER_TURN = 3
 const val INITIAL_DRAW_COUNT = 5
+val DEVELOPMENT_ACTION_CARDS = arrayOf(ActionType.HOUSE, ActionType.HOTEL)
 const val FAKE_CARD_ID = 999
 val FAKE_CARD = Card.Action(FAKE_CARD_ID, 0, ActionType.PASS_GO)
 val colorToRent = mapOf(

@@ -14,7 +14,7 @@ class GameState(var playerAtTurn: String?,
 
     var playerOrder : List<String> = emptyList()
     var cardsLeftToPlay: Int = MAX_CARDS_PER_TURN
-    var playerPendingActions : MutableMap<String, MutableList<String>> = hashMapOf()
+    var pendingInteractions: MutableSet<PendingInteraction> = mutableSetOf()
 
     constructor(players: List<String>) : this(
         null,
@@ -25,10 +25,10 @@ class GameState(var playerAtTurn: String?,
     ) {
         playerOrder = players.shuffled()
         playerAtTurn = playerOrder.first()
+        pendingInteractions = mutableSetOf()
         players.forEach { id ->
             val hand = MutableList(INITIAL_DRAW_COUNT) { drawPile.removeFirst() }
-            this.playerState[id] = PlayerState(hand, PropertyCollection(), mutableListOf())
-            this.playerPendingActions[id] = mutableListOf<String>()
+            this.playerState[id] = PlayerState(hand, PropertyCollection(), mutableSetOf())
         }
     }
 
@@ -40,11 +40,11 @@ class GameState(var playerAtTurn: String?,
         playerState: MutableMap<String, PlayerState>,
         playerOrder : List<String>,
         cardsLeftToPlay : Int,
-        playerPendingActions: MutableMap<String, MutableList<String>>
+        pendingInteractions: MutableSet<PendingInteraction>
     ) : this(playerAtTurn, winningPlayer, drawPile, discardPile, playerState) {
         this.playerOrder = playerOrder
         this.cardsLeftToPlay = cardsLeftToPlay
-        this.playerPendingActions = playerPendingActions
+        this.pendingInteractions = pendingInteractions
     }
 
     fun draw(passGo: Boolean = false) : List<Card> {
@@ -79,9 +79,9 @@ class GameState(var playerAtTurn: String?,
         playerState: MutableMap<String, PlayerState> = this.playerState,
         playerOrder: List<String> = this.playerOrder,
         cardsLeftToPlay: Int = this.cardsLeftToPlay,
-        playerPendingActions : MutableMap<String, MutableList<String>> = this.playerPendingActions
+        pendingInteractions: MutableSet<PendingInteraction> = this.pendingInteractions
     ): GameState {
-        return GameState(playerAtTurn, winningPlayer, drawPile, discardPile, playerState, playerOrder, cardsLeftToPlay, playerPendingActions)
+        return GameState(playerAtTurn, winningPlayer, drawPile, discardPile, playerState, playerOrder, cardsLeftToPlay, pendingInteractions)
     }
 
     fun isCardInHand(player: String, card: Card): Boolean {
@@ -101,6 +101,7 @@ class VisibleGameState {
     val discardPile : MutableList<Card>
     val playerState : MutableMap<String, PlayerState> = mutableMapOf()
     val cardsLeftToPlay : Int
+    val pendingInteractions : MutableSet<PendingInteraction>
 
     constructor(gameState: GameState, playerId: String) {
         playerAtTurn = gameState.playerAtTurn
@@ -108,6 +109,7 @@ class VisibleGameState {
         drawPileSize = gameState.drawPile.size
         discardPile = gameState.discardPile
         cardsLeftToPlay = gameState.cardsLeftToPlay
+        pendingInteractions = gameState.pendingInteractions
         gameState.playerState.forEach {
                 (id, state) ->  if (id == playerId) playerState[id] = state else playerState[id] = state.getStateWithHandHidden() }
     }

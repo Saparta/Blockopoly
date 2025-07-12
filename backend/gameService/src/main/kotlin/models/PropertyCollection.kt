@@ -6,49 +6,88 @@ import java.util.UUID
 
 @Serializable
 class PropertyCollection {
-    val collection : MutableList<PropertySet> = emptyList<PropertySet>().toMutableList()
-
+    private val collection : MutableMap<String, PropertySet> = mutableMapOf()
+    private val propertyToSetId : MutableMap<Int, String> = mutableMapOf()
+    private val developmentsToSetId : MutableMap<Int, String> = mutableMapOf()
     fun addProperty(property: Card.Property, withColor: Color) : String? {
         if (!property.colors.contains(withColor)) return null
-        val result = collection.find {
-            propertySet -> propertySet.color == withColor && !propertySet.isComplete
+        val result = collection.entries.find {
+                (_, propertySet) -> propertySet.color == withColor && !propertySet.isComplete
         }
         if (result == null) {
             val setId = UUID.randomUUID().toString().replace("-","")
-            collection.add(
+            collection.put( setId,
                 PropertySet(
                     setId,
                     mutableListOf(property),
                     withColor
                 )
             )
+            propertyToSetId[property.id] = setId
             return setId
         } else {
-            result.addProperty(property)
-            return result.propertySetId
+            result.value.addProperty(property)
+            propertyToSetId[property.id] = result.key
+            return result.key
         }
     }
 
     fun removeProperty(property: Card.Property) {
-        var removedFrom: PropertySet? = null
-
-        collection.forEach {
-            val wasRemoved = it.removeProperty(property)
-            if (wasRemoved) {
-                removedFrom = it
-            }
-
+        val removedFrom: PropertySet? = propertyToSetId[property.id]?.let {
+            return@let if (collection[it]?.removeProperty(property) ?: false) collection[it] else null
         }
 
         removedFrom?.let {
-            if (it.properties.isEmpty() && it.house == null && it.hotel == null) collection.remove(it)
+            propertyToSetId.remove(property.id)
+            if (it.isSetEmpty()) collection.remove(it.propertySetId)
         }
+    }
+
+    fun isPropertyInCollection(property: Card.Property): Boolean {
+        return propertyToSetId[property.id] != null
+    }
+
+    fun removeDevelopment(development: Card.Action) {
+        if (development.actionType !in arrayOf(ActionType.HOTEL, ActionType.HOTEL)) return
+        developmentsToSetId[development.id]?.let { setId ->
+            when (development.actionType) {
+                ActionType.HOTEL -> collection[setId]?.hotel = null
+                ActionType.HOUSE -> collection[setId]?.house = null
+                else -> return
+            }
+            developmentsToSetId.remove(development.id)
+            if (collection[setId]?.isSetEmpty() == true) collection.remove(setId)
+        }
+    }
+
+    fun addDevelopment(development: Card.Action, propertySetId: String) {
+        if (development.actionType !in arrayOf(ActionType.HOTEL, ActionType.HOTEL)) return
+        val propertySet = collection[propertySetId] ?: return
+        if (!propertySet.isComplete) return
+        when (development.actionType) {
+            ActionType.HOUSE -> {
+                if (propertySet.house != null) return
+                propertySet.house = development
+            }
+            ActionType.HOTEL -> {
+                if (propertySet.house == null || propertySet.hotel != null) return
+                propertySet.hotel = development
+            }
+            else -> return
+        }
+    }
+
+    fun isDevelopmentInCollection(development: Card.Action): Boolean {
+        return developmentsToSetId[development.id] != null
+    }
+
+    fun getPropertySet(setId: String): PropertySet? {
+        return collection[setId]
     }
 }
 
 @Serializable
 data class PropertySet(val propertySetId: String, val properties: MutableList<Card.Property>, var color: Color?, var house: Card.Action? = null, var hotel: Card.Action? = null, var isComplete: Boolean = false) {
-
     fun calculateRent() : Int {
         if (color == null) return 0
         if (!isComplete) return colorToRent[color]!![properties.size - 1]
@@ -64,17 +103,23 @@ data class PropertySet(val propertySetId: String, val properties: MutableList<Ca
 
     fun removeProperty(property: Card.Property) : Boolean {
         val wasRemoved = properties.removeIf { prop -> prop.id == property.id }
-        if (!isCompleteSet()) {
-            isComplete = false
-        }
-        if (properties.size == 1 && properties[0].value == null) {
-            color = null
+        if (wasRemoved) {
+            if (!isCompleteSet()) {
+                isComplete = false
+            }
+            if (properties.map { it.value }.all { it == null }) {
+                color = null
+            }
         }
         return wasRemoved
     }
 
     fun totalValue(): Int {
         return properties.sumOf { prop -> prop.value ?: 0 } + (house?.value ?: 0) + (hotel?.value ?: 0)
+    }
+
+    fun isSetEmpty(): Boolean {
+        return (properties.isEmpty() && house == null && hotel == null)
     }
 
     private fun isCompleteSet() : Boolean {
