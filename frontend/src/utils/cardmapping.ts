@@ -82,7 +82,7 @@ export const cardAssetMap: Record<number, string> = (() => {
   }
   for (let i = 0; i < 2; i++) {
     id++;
-    m[id] = svgByName["action-rent-any-color.svg"];
+    m[id] = svgByName["action-rent-mint-black.svg"];
   }
   for (let i = 0; i < 3; i++) {
     id++;
@@ -174,15 +174,20 @@ export const cardAssetMap: Record<number, string> = (() => {
   id++;
   m[id] = svgByName["wproperty-magenta-orange.svg"];
   id++;
+  m[id] = svgByName["wproperty-green-black.svg"];
+  id++;
+  m[id] = svgByName["wproperty-light-blue-black.svg"];
+  id++;
   m[id] = svgByName["wproperty-mint-black.svg"];
   id++;
   m[id] = svgByName["wproperty-red-yellow.svg"];
-
-  // ── Null-priced wildcards (map to card-back) ────────────────────
-  for (let i = 0; i < 2; i++) {
-    id++;
-    m[id] = svgByName["card-back.svg"]; // card back for null-priced wildcards
-  }
+  id++;
+  m[id] = svgByName["wproperty-red-yellow.svg"];
+  id++;
+  // Wild card rainbow (null price, used for wilds)
+  m[id] = svgByName["wproperty-rainbow.svg"];
+  id++;
+  m[id] = svgByName["wproperty-rainbow.svg"];
 
   // ── Money cards ─────────────────────────────────────────────────
   for (let i = 0; i < 6; i++) {
