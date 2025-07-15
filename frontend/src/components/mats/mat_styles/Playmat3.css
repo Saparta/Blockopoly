@@ -3,114 +3,18 @@
   box-sizing: border-box;
 }
 .playing-mat-3-players {
-  background: #e5e5e5;
+  background: transparent;
   height: 67.5rem;
   position: relative;
 }
+
 .backdrop {
-  width: 120rem;
-  height: 67.5rem;
   position: absolute;
-  left: 0rem;
-  top: 0rem;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  aspect-ratio: 16/9;
-}
-.draw-pile {
-  width: 10.3125rem;
-  height: 15.401875rem;
-  position: static;
-}
-.bopoly-dealbreaker-6 {
-  background: #ffffff;
-  border-radius: 0.9375rem;
-  border-style: solid;
-  border-color: #000000;
-  border-width: 0.1875rem;
-  width: 10.3125rem;
-  height: 15.401875rem;
-  position: absolute;
-  left: 45.625rem;
-  top: 24.8125rem;
-  aspect-ratio: 165/246.43;
-}
-.deck {
-  color: #000000;
-  text-align: center;
-  font-family: "Inter-Regular", sans-serif;
-  font-size: 1.875rem;
-  font-weight: 400;
-  position: absolute;
-  left: 46.4375rem;
-  top: 29.375rem;
-  width: 8.9375rem;
-  height: 6.9375rem;
-  -webkit-text-stroke: 0.0625rem #000000;
-}
-.discard-pile {
-  width: 12.6875rem;
-  height: 15.21375rem;
-  position: static;
-}
-.card-1 {
-  border-radius: 0.57875rem;
-  border-style: solid;
-  border-color: #000000;
-  border-width: 0.115625rem;
-  width: 7.44%;
-  height: 13.3175rem;
-  position: absolute;
-  right: 42.68%;
-  left: 49.87%;
-  top: 27.31375rem;
-  transform-origin: 0 0;
-  transform: rotate(-15.432deg) scale(1, 1);
-  aspect-ratio: 142.88/213.08;
-}
-.card-2 {
-  border-radius: 0.57875rem;
-  border-style: solid;
-  border-color: #000000;
-  border-width: 0.115625rem;
-  width: 7.44%;
-  height: 13.3175rem;
-  position: absolute;
-  right: 40.23%;
-  left: 52.33%;
-  top: 24.9375rem;
-  transform-origin: 0 0;
-  transform: rotate(15.143deg) scale(1, 1);
-  aspect-ratio: 142.88/213.08;
-}
-.card-3 {
-  background: #d9d9d9;
-  border-radius: 0.57875rem;
-  border-style: solid;
-  border-color: #000000;
-  border-width: 0.115625rem;
-  width: 7.44%;
-  height: 13.3175rem;
-  position: absolute;
-  right: 41.79%;
-  left: 50.77%;
-  top: 25.939375rem;
-  transform-origin: 0 0;
-  transform: rotate(-0.046deg) scale(1, 1);
-  aspect-ratio: 142.88/213.08;
-}
-.discard-pile2 {
-  color: #312323;
-  text-align: center;
-  font-family: "Inter-Regular", sans-serif;
-  font-size: 1.3810042142868042rem;
-  font-weight: 400;
-  position: absolute;
-  right: 43.05%;
-  left: 52.23%;
-  width: 4.72%;
-  bottom: 48.54%;
-  top: 45.34%;
-  height: 6.12%;
+  z-index: -1;
 }
 .player-1-space {
   width: 58.5625rem;
@@ -120,7 +24,7 @@
   top: 47.0625rem;
 }
 .money-collection-bank {
-  background: #ffffff;
+  background: transparent;
   border-style: solid;
   border-color: #000000;
   border-width: 0.15375rem;
@@ -151,7 +55,7 @@
   inset: 0;
 }
 .property-collection {
-  background: #ffffff;
+  background: transparent;
   border-style: solid;
   border-color: #000000;
   border-width: 0.15375rem;
@@ -196,7 +100,7 @@
   transform: rotate(-90deg) scale(1, 1);
 }
 .money-collection-bank2 {
-  background: #ffffff;
+  background: transparent;
   border-style: solid;
   border-color: #000000;
   border-width: 0.15375rem;
@@ -208,7 +112,7 @@
   overflow: hidden;
 }
 .property-collection3 {
-  background: #ffffff;
+  background: transparent;
   border-style: solid;
   border-color: #000000;
   border-width: 0.15375rem;

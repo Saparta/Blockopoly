@@ -12,6 +12,16 @@
   justify-content: center;
   background: #e5e5e5;
 }
+
+.playing-mat-outline-3-players {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e5e5e5;
+}
+
 .draw-pile {
   width: 10.3125rem;
   height: 15.401875rem;

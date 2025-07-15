@@ -1,5 +1,4 @@
 /* src/pages/PlayScreen.tsx -------------------------------------------- */
-import React from "react";
 import { PLAYERS_KEY } from "../constants/constants"; // PLAYERS_KEY === "playersInRoom"
 import "../style/PlayScreen.css";
 // import card from "../assets/cards/card-back.svg";
@@ -7,10 +6,15 @@ import "../style/PlayScreen.css";
 // import mat3 from "../assets/play_mats/playmat_3.svg";
 // import mat4 from "../assets/play_mats/playmat_4.svg";
 // import mat5 from "../assets/play_mats/playmat_5.svg";
-import playmat2 from "../components/mats/Playmat2";
-import playmat3 from "../components/mats/Playmat3";
-import playmat4 from "../components/mats/Playmat4";
-import playmat5 from "../components/mats/Playmat5";
+// import playmat2 from "../components/mats/Playmat2";
+// import playmat3 from "../components/mats/Playmat3";
+// import playmat4 from "../components/mats/Playmat4";
+// import playmat5 from "../components/mats/Playmat5";
+import { lazy } from "react";
+const playmat2 = lazy(() => import("../components/mats/Playmat2"));
+const playmat3 = lazy(() => import("../components/mats/Playmat3"));
+const playmat4 = lazy(() => import("../components/mats/Playmat4"));
+const playmat5 = lazy(() => import("../components/mats/Playmat5"));
 
 // const LOBBY_API = import.meta.env.room_service ?? "http://localhost:8080";
 // const GAME_API = import.meta.env.game_service ?? "http://localhost:8081";

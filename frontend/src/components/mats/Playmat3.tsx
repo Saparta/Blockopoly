@@ -28,80 +28,67 @@ const Playmat3: React.FC = () => {
   const closeHand = () => setOpenHandFor(null);
 
   return (
-    <div className="playing-mat-outline">
+    <div className="playing-mat-outline-3-players">
       <img className="backdrop" src={backdrop} alt="3-Player Backdrop" />
 
-      <div className="mat-stage playing-mat-3-players">
-        {/* ── DRAW PILE ─────────────────────────────────────────────── */}
-        <div className="draw-pile" id="draw-pile">
-          <img
-            className="bopoly-dealbreaker-6"
-            src={drawPileImg}
-            alt="Draw pile"
-          />
-          <div className="deck">Deck</div>
+      {/* ── DRAW PILE ─────────────────────────────────────────────── */}
+      <div className="draw-pile">
+        <div className="deck">
+          <img className="deck-top" src={drawPileImg} alt="Draw pile" />
         </div>
+      </div>
 
-        {/* ── DISCARD PILE ─────────────────────────────────────────── */}
-        <div className="discard-pile" id="discard-pile">
-          <img className="card-1" src={discard1} alt="" aria-hidden />
-          <img className="card-2" src={discard2} alt="" aria-hidden />
-          <img className="card-3" src={discard3} alt="" aria-hidden />
-          <div className="discard-pile2">
-            Discard
-            <br />
-            Pile
-          </div>
-        </div>
+      {/* ── DISCARD PILE ─────────────────────────────────────────── */}
+      <div className="discard-pile" id="discard-pile">
+        <img className="card-1" src={discard1} alt="" aria-hidden />
+        <img className="card-2" src={discard2} alt="" aria-hidden />
+        <img className="card-3" src={discard3} alt="" aria-hidden />
+        <div className="discard-pile2"></div>
+      </div>
 
-        {/* ── PLAYER 1 ─────────────────────────────────────────────── */}
-        <div className="player-1-space">
-          <div className="money-collection-bank">
-            <div className="bank-pile" id="p1-bank"></div>
-            {myPID === pidMap.p1 && (
-              <button className="hand-toggle" onClick={openHand("p1")}>
-                Hand
-              </button>
-            )}
-          </div>
-          <div className="property-collection" id="p1-properties" />
-          <div className="property-collection2"></div>
-          <div className="text" />
+      {/* ── PLAYER 1 ─────────────────────────────────────────────── */}
+      <div className="player-1-space">
+        <div className="money-collection-bank">
+          <div className="bank-pile" id="p1-bank"></div>
+          {myPID === pidMap.p1 && (
+            <button className="hand-toggle" onClick={openHand("p1")}>
+              Hand
+            </button>
+          )}
         </div>
+        <div className="property-collection" id="p1-properties" />
+        <div className="property-collection2"></div>
+        <div className="text" />
+      </div>
 
-        {/* ── PLAYER 2 ─────────────────────────────────────────────── */}
-        <div className="player-2-space">
-          <div className="money-collection-bank2">
-            <div className="bank-pile" id="p2-bank"></div>
-            {myPID === pidMap.p2 && (
-              <button className="hand-toggle" onClick={openHand("p2")}>
-                Hand
-              </button>
-            )}
-          </div>
-          <div className="property-collection3" id="p2-properties" />
-          <div className="property-collection4"></div>
-          <div className="text" />
+      {/* ── PLAYER 2 ─────────────────────────────────────────────── */}
+      <div className="player-2-space">
+        <div className="money-collection-bank2">
+          <div className="bank-pile" id="p2-bank"></div>
+          {myPID === pidMap.p2 && (
+            <button className="hand-toggle" onClick={openHand("p2")}>
+              Hand
+            </button>
+          )}
         </div>
+        <div className="property-collection3" id="p2-properties" />
+        <div className="property-collection4"></div>
+        <div className="text" />
+      </div>
 
-        {/* ── PLAYER 3 ─────────────────────────────────────────────── */}
-        <div className="player-3-space">
-          <div className="money-collection-bank2">
-            <div className="bank-pile" id="p3-bank">
-              Bank
-              <br />
-              Pile
-            </div>
-            {myPID === pidMap.p3 && (
-              <button className="hand-toggle" onClick={openHand("p3")}>
-                Hand
-              </button>
-            )}
-          </div>
-          <div className="property-collection3" />
-          <div className="property-collection5"></div>
-          <div className="text" />
+      {/* ── PLAYER 3 ─────────────────────────────────────────────── */}
+      <div className="player-3-space">
+        <div className="money-collection-bank2">
+          <div className="bank-pile" id="p3-bank"></div>
+          {myPID === pidMap.p3 && (
+            <button className="hand-toggle" onClick={openHand("p3")}>
+              Hand
+            </button>
+          )}
         </div>
+        <div className="property-collection3" />
+        <div className="property-collection5"></div>
+        <div className="text" />
       </div>
 
       {/* ── HAND MODAL ───────────────────────────────────────────── */}
