@@ -1,5 +1,11 @@
 package com.gameservice.models
 
+import com.gameservice.ACCEPT_CHARGE_ACTION
+import com.gameservice.END_TURN_ACTION
+import com.gameservice.JUST_SAY_NO_ACTION
+import com.gameservice.PLAY_MONEY_ACTION
+import com.gameservice.PLAY_PROPERTY_ACTION
+import com.gameservice.REQUEST_RENT_ACTION
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -14,25 +20,25 @@ sealed interface GameAction
 class StartTurn() : GameAction
 
 @Serializable
-@SerialName("EndTurn")
+@SerialName(END_TURN_ACTION)
 class EndTurn() : GameAction
 
 @Serializable
-@SerialName("PlayProperty")
+@SerialName(PLAY_PROPERTY_ACTION)
 data class PlayProperty(val id: Int, val color: Color) : GameAction
 
 @Serializable
-@SerialName("PlayMoney")
+@SerialName(PLAY_MONEY_ACTION)
 data class PlayMoney(val id: Int) : GameAction
 
 @Serializable
-@SerialName("RequestRent")
+@SerialName(REQUEST_RENT_ACTION)
 data class RequestRent(val rentCardId: Int, val rentDoublers: List<Int>, val rentingSetId: String, val target: String? = null) : GameAction
 
 @Serializable
-@SerialName("AcceptCharge")
+@SerialName(ACCEPT_CHARGE_ACTION)
 data class AcceptCharge(val payment: List<Int>) : GameAction
 
 @Serializable
-@SerialName("JustSayNo")
+@SerialName(JUST_SAY_NO_ACTION)
 data class JustSayNo(val ids: List<Int>, val respondingTo: String? = null) : GameAction

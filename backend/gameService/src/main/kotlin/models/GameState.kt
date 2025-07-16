@@ -115,6 +115,6 @@ class VisibleGameState {
         cardsLeftToPlay = gameState.cardsLeftToPlay
         pendingInteractions = gameState.pendingInteractions
         gameState.playerState.forEach {
-                (id, state) ->  if (id == playerId) playerState[id] = state else playerState[id] = state.getStateWithHandHidden() }
+                (id, state) ->  if (id == playerId) playerState[id] = state else playerState[id] = state.getPublicPlayerState() }
     }
 }

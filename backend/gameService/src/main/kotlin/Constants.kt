@@ -17,15 +17,14 @@ val REDIS_CLIENT_KEY = AttributeKey<RedisClient>(env["REDIS_CLIENT"])
 val REDIS_CONNECTION_KEY = AttributeKey<StatefulRedisConnection<String, String>>(env["REDIS_CONNECTION_KEY"])
 val REDIS_COMMANDS_KEY = AttributeKey<RedisAsyncCommands<String, String>>(env["REDIS_ASYNC_COMMANDS_KEY"])
 const val SECONDS_IN_DAY = 86400
-const val PLAYER_TO_NAME_PREFIX = "v1:p2n:"
-const val PLAYER_TO_ROOM_PREFIX = "v1:p2r:"
 const val ROOM_TO_PLAYERS_PREFIX = "v1:r2p:"
 const val ROOM_START_STATUS_PREFIX = "v1:rss:"
-enum class ErrorType {
-    BAD_REQUEST,
-    SERVICE_UNAVAILABLE,
-    INTERNAL_SERVER_ERROR,
-}
+const val END_TURN_ACTION = "EndTurn"
+const val PLAY_PROPERTY_ACTION = "PlayProperty"
+const val PLAY_MONEY_ACTION = "PlayMoney"
+const val REQUEST_RENT_ACTION = "RequestRent"
+const val ACCEPT_CHARGE_ACTION = "AcceptCharge"
+const val JUST_SAY_NO_ACTION = "JustSayNo"
 val cardMapping = createCardMapping()
 val deck = cardMapping.values
 const val MAX_CARDS_PER_TURN = 3
