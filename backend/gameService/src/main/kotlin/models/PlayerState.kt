@@ -12,4 +12,8 @@ data class PlayerState(val hand: MutableList<Card>, val propertyCollection: Prop
             bank
         )
     }
+
+    fun totalValue() : Int {
+        return propertyCollection.totalValue() + bank.sumOf { it.value ?: 0 }
+    }
 }

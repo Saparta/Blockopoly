@@ -2,15 +2,12 @@ package com.gameservice.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 // File for messages received from players
 data class Command(val playerId: String, val command: GameAction)
 
 @Serializable
-sealed interface GameAction {
-    fun toJson(): String = Json.encodeToString(serializer(),this)
-}
+sealed interface GameAction
 
 @Serializable
 @SerialName("StartTurn")
@@ -38,5 +35,4 @@ data class AcceptCharge(val payment: List<Int>) : GameAction
 
 @Serializable
 @SerialName("JustSayNo")
-data class JustSayNo(val id: Int) : GameAction
-
+data class JustSayNo(val ids: List<Int>, val respondingTo: String? = null) : GameAction

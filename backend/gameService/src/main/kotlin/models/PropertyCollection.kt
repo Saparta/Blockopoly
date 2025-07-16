@@ -84,6 +84,10 @@ class PropertyCollection {
     fun getPropertySet(setId: String): PropertySet? {
         return collection[setId]
     }
+
+    fun totalValue() : Int {
+        return collection.values.sumOf { it.totalValue() }
+    }
 }
 
 @Serializable

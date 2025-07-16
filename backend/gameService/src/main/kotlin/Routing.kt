@@ -2,6 +2,7 @@ package com.gameservice
 
 import com.gameservice.models.Command
 import com.gameservice.models.GameAction
+import com.gameservice.models.StartTurn
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.response.respond
@@ -20,6 +21,7 @@ fun Application.configureRouting() {
     routing {
         get("/") {call.respond(HttpStatusCode.OK)}
         post("/start/{roomId}") {
+            // TODO: Extract this into roomService and use Redis PubSub to create rooms in ServerManager
             // TODO: Use JWT + playerId from request body to guarantee the user starting the room is part of the room
             call.application.environment.log.info("Starting game")
             val redis = call.application.attributes[REDIS_COMMANDS_KEY]
@@ -46,7 +48,11 @@ fun Application.configureRouting() {
                 val game = ServerManager.getRoom(roomId)!!
                 incoming.consumeEach { frame ->
                     if (frame is Frame.Text) {
-                        game.sendCommand(Command(playerId, Json.decodeFromString<GameAction>(frame.readText())))
+                        val actionCommand = Json.decodeFromString<GameAction>(frame.readText())
+                        when (actionCommand) {
+                            is StartTurn -> {}
+                            else -> game.sendCommand(Command(playerId, actionCommand))
+                        }
                     }
                 }
             }

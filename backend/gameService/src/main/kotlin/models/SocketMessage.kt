@@ -10,6 +10,8 @@ sealed interface SocketMessage {
     fun toJson() = Json.encodeToString(serializer(),this)
 }
 
+sealed interface MultiStepInteraction : SocketMessage
+
 @Serializable
 @SerialName("LEAVE")
 data class LeaveMessage(val playerId: String) : SocketMessage
@@ -43,9 +45,13 @@ data class PlaceInBankMessage(val playerId: String, val card: Card) : SocketMess
 data class PlacePropertyMessage(val playerId: String, val card: Card.Property, val propertySetId: String) : SocketMessage
 
 @Serializable
-@SerialName("RENT_REQUEST")
-data class RentRequestMessage(val requester: String, val targets: List<String>, val cardsUsed: List<Int>, val amount: Int) : SocketMessage
-
-@Serializable
 @SerialName("PAYMENT_EARNINGS")
 data class PaymentEarningsMessage(val receiver: String, val giver: String, val propertyToDestination: Map<Int, String>, val bankCards: Set<Int>) : SocketMessage
+
+@Serializable
+@SerialName("RENT_REQUEST")
+data class RentRequestMessage(val requester: String, val targets: List<String>, val cardsUsed: List<Int>, var amount: Int) : SocketMessage, MultiStepInteraction
+
+@Serializable
+@SerialName("JUST_SAY_NO")
+data class JustSayNoMessage(val playerId: String, val respondingTo: String) : SocketMessage

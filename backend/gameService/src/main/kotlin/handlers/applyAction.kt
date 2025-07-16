@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 suspend fun applyAction(room: DealGame, game: MutableStateFlow<GameState>, playerId: String, action: GameAction) : GameState {
     return when (action) {
-        is StartTurn -> startTurn(room, game, playerId)
+        is StartTurn -> startTurn(room, game.value, playerId)
         is PlayProperty -> playProperty(room, game, playerId, action)
         is PlayMoney -> playForMoney(room, game, playerId, action)
         is EndTurn -> endTurn(room, game, playerId)
