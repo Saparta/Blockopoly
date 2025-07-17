@@ -11,6 +11,11 @@ import io.ktor.server.websocket.timeout
 import io.lettuce.core.RedisClient
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.async.RedisAsyncCommands
+import io.lettuce.core.pubsub.RedisPubSubAdapter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 fun Application.configureAdministration() {
@@ -40,5 +45,21 @@ fun Application.configureAdministration() {
         connection.close()
         redisClient.shutdown()
         monitor.unsubscribe(ApplicationStopping) {}
+    }
+
+    CoroutineScope(Dispatchers.Default + SupervisorJob()).launch {
+        val pubSub = redisClient.connectPubSub()
+        pubSub.addListener(object : RedisPubSubAdapter<String, String>() {
+            override fun message(channel: String?, message: String?) {
+                if (channel == ROOM_START_CHANNEL) {
+                    val msg = message?.split(ROOM_BROADCAST_MSG_DELIMITER) ?: return
+                    val roomId = msg.first()
+                    val players = msg.subList(1, msg.size)
+                    ServerManager.addRoom(DealGame(roomId, players))
+                }
+            }
+        })
+        pubSub.async().subscribe(ROOM_START_CHANNEL)
+
     }
 }
