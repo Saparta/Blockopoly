@@ -14,12 +14,13 @@ suspend fun playProperty(room: DealGame, game: MutableStateFlow<GameState>, play
         if (current.pendingInteractions.isNotEmpty()) return current
         val card = cardMapping[playProperty.id] ?: return current
         if (card !is Card.Property) return current
+        val playerState = current.playerState[playerId] ?: return current
         if (current.playerAtTurn != playerId || current.cardsLeftToPlay <= 0 ||
             !current.isCardInHand(playerId, card) ||
             !card.colors.contains(playProperty.color)) return current
 
-        current.playerState[playerId]!!.hand.removeIf { it.id == card.id }
-        val propertySetId = current.playerState[playerId]!!.propertyCollection.addProperty(card, playProperty.color)
+        playerState.hand.removeIf { it.id == card.id }
+        val propertySetId = playerState.addProperty(card, playProperty.color)
         room.sendBroadcast(PlacePropertyMessage(playerId, card, propertySetId!!))
         val cardsLeft = current.cardsLeftToPlay - 1
         return@updateAndGet current.copy(cardsLeftToPlay = cardsLeft)

@@ -1,6 +1,7 @@
 package com.gameservice.models
 
 import com.gameservice.ACCEPT_CHARGE_ACTION
+import com.gameservice.ACCEPT_JUST_SAY_NO_ACTION
 import com.gameservice.END_TURN_ACTION
 import com.gameservice.JUST_SAY_NO_ACTION
 import com.gameservice.PLAY_MONEY_ACTION
@@ -42,3 +43,7 @@ data class AcceptCharge(val payment: List<Int>) : GameAction
 @Serializable
 @SerialName(JUST_SAY_NO_ACTION)
 data class JustSayNo(val ids: List<Int>, val respondingTo: String? = null) : GameAction
+
+@Serializable
+@SerialName(ACCEPT_JUST_SAY_NO_ACTION)
+data class AcceptJsn(val respondingTo: String) : GameAction

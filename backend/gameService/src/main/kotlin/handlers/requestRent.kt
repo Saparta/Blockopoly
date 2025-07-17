@@ -17,6 +17,7 @@ suspend fun requestRent(room: DealGame, game: MutableStateFlow<GameState>, playe
         if (current.pendingInteractions.isNotEmpty()) return current
         val rentCard = cardMapping[rentRequest.rentCardId] ?: return current
         if (rentCard !is Card.Rent) return current
+        val playerState = current.playerState[playerId] ?: return current
         val numCardsConsumed = 1 + rentRequest.rentDoublers.size
         val doublers = rentRequest.rentDoublers.map {
             val doubleRentCard = cardMapping[it]
@@ -28,7 +29,7 @@ suspend fun requestRent(room: DealGame, game: MutableStateFlow<GameState>, playe
         val isWildRent = rentCard.colors.size == Color.entries.size
         val validTargeting = (isWildRent && rentRequest.target != null) || (!isWildRent && rentRequest.target == null)
         if (doublers.any { !current.isCardInHand(playerId, it) }) return current
-        val setBeingCharged = current.playerState[playerId]?.propertyCollection?.getPropertySet(rentRequest.rentingSetId) ?: return current
+        val setBeingCharged = playerState.getPropertySet(rentRequest.rentingSetId) ?: return current
         if (current.playerAtTurn != playerId || current.cardsLeftToPlay < numCardsConsumed || !validTargeting ||
             !current.isCardInHand(playerId, rentCard) ||
             !rentCard.colors.contains(setBeingCharged.color) ||

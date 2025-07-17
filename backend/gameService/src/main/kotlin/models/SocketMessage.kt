@@ -50,7 +50,7 @@ data class PaymentEarningsMessage(val receiver: String, val giver: String, val p
 
 @Serializable
 @SerialName("RENT_REQUEST")
-data class RentRequestMessage(val requester: String, val targets: List<String>, val cardsUsed: List<Int>, var amount: Int) : SocketMessage, MultiStepInteraction
+data class RentRequestMessage(val requester: String, val targets: List<String>, val cardsUsed: List<Int>, val amount: Int) : SocketMessage, MultiStepInteraction
 
 @Serializable
 @SerialName("JUST_SAY_NO")

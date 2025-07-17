@@ -101,11 +101,12 @@ class GameState(var playerAtTurn: String?,
 class VisibleGameState {
     val playerAtTurn : String?
     val winningPlayer: String?
-    val drawPileSize: Int
-    val discardPile : MutableList<Card>
-    val playerState : MutableMap<String, PlayerState> = mutableMapOf()
     val cardsLeftToPlay : Int
+    val playerOrder : List<String>
+    val drawPileSize: Int
     val pendingInteractions : Interactions
+    val playerState : MutableMap<String, PlayerState> = mutableMapOf()
+    val discardPile : MutableList<Card>
 
     constructor(gameState: GameState, playerId: String) {
         playerAtTurn = gameState.playerAtTurn
@@ -113,8 +114,10 @@ class VisibleGameState {
         drawPileSize = gameState.drawPile.size
         discardPile = gameState.discardPile
         cardsLeftToPlay = gameState.cardsLeftToPlay
+        playerOrder = gameState.playerOrder
         pendingInteractions = gameState.pendingInteractions
         gameState.playerState.forEach {
-                (id, state) ->  if (id == playerId) playerState[id] = state else playerState[id] = state.getPublicPlayerState() }
+                (id, state) ->  if (id == playerId) playerState[id] = state else playerState[id] = state.getPublicPlayerState()
+        }
     }
 }

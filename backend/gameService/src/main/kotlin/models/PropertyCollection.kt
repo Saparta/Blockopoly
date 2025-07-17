@@ -88,6 +88,10 @@ class PropertyCollection {
     fun totalValue() : Int {
         return collection.values.sumOf { it.totalValue() }
     }
+
+    fun getNumOfSellableCards() : Int {
+        return collection.values.fold(0) { acc, propertySet -> acc + propertySet.getNumOfSellableCards() }
+    }
 }
 
 @Serializable
@@ -124,6 +128,10 @@ data class PropertySet(val propertySetId: String, val properties: MutableList<Ca
 
     fun isSetEmpty(): Boolean {
         return (properties.isEmpty() && house == null && hotel == null)
+    }
+
+    fun getNumOfSellableCards(): Int {
+        return properties.filter { it.value != null }.size + (if (house == null) 0 else 1) + (if (hotel == null) 0 else 1)
     }
 
     private fun isCompleteSet() : Boolean {

@@ -15,13 +15,13 @@ fun pay(gameState: GameState, giver: String, receiver: String, payment: List<Int
     paymentCards.forEach { card ->
         when (card) {
             is Card.Property -> {
-                if (!playerState.propertyCollection.isPropertyInCollection(card)) return PayResponse()
+                if (!playerState.isPropertyInCollection(card)) return PayResponse()
             }
             is Card.ActionCard -> {
                 if (!playerState.bank.contains(card)) {
                     if (card.actionType in DEVELOPMENT_ACTION_CARDS) {
                         if (card !is Card.Action) return PayResponse()
-                        if (!playerState.propertyCollection.isDevelopmentInCollection(card)) return PayResponse()
+                        if (!playerState.isDevelopmentInCollection(card)) return PayResponse()
                     } else return PayResponse()
                 }
             }
@@ -36,15 +36,15 @@ fun pay(gameState: GameState, giver: String, receiver: String, payment: List<Int
     paymentCards.forEach { card ->
         when (card) {
             is Card.Property -> {
-                playerState.propertyCollection.removeProperty(card)
+                playerState.removeProperty(card)
                 // Players can always Move property after they receive it since it's their turn so color isn't too important
-                val destination = receiverPlayerState.propertyCollection.addProperty(card, card.colors.first())!!
+                val destination = receiverPlayerState.addProperty(card, card.colors.first())!!
                 propertyToDestinations[card.id] = destination
             }
             is Card.ActionCard -> {
                 if (!playerState.bank.remove(card)) {
                     if (card.actionType in DEVELOPMENT_ACTION_CARDS) {
-                        playerState.propertyCollection.removeDevelopment(card as Card.Action)
+                        playerState.removeDevelopment(card as Card.Action)
                     }
                 }
                 receiverPlayerState.bank.add(card)

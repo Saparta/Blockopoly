@@ -7,12 +7,12 @@ import kotlinx.serialization.Transient
 class Interactions {
     @Transient
     private val _pendingInteractions: MutableList<PendingInteraction> = mutableListOf()
-    val pendingInteractions: List<PendingInteraction>
-        get() = _pendingInteractions
     @Transient
     private val targetToInteraction = mutableMapOf<String, PendingInteraction>()
     @Transient
     private var initiator: String? = null
+    val pendingInteractions: List<PendingInteraction>
+        get() = _pendingInteractions
 
     fun add(pendingInteraction: PendingInteraction) : Unit? {
         if (pendingInteraction.toPlayer in targetToInteraction) return null // Target already in interaction
@@ -37,8 +37,8 @@ class Interactions {
 
     fun isInitiator(playerId: String) = initiator != null && playerId == initiator
 
-    fun isEmpty() : Boolean = _pendingInteractions.isEmpty()
-    fun isNotEmpty() : Boolean = _pendingInteractions.isNotEmpty()
+    fun isEmpty() : Boolean = pendingInteractions.isEmpty()
+    fun isNotEmpty() : Boolean = pendingInteractions.isNotEmpty()
 }
 
 @Serializable

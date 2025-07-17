@@ -19,7 +19,7 @@ suspend fun justSayNo(room: DealGame, game: MutableStateFlow<GameState>, playerI
             } else {
                 current.pendingInteractions.getTargetedInteraction(playerId)
             } ?: return current
-        if (interaction.awaitingResponseFrom != playerId) return current
+        if (interaction.awaitingResponseFrom != playerId || interaction.resolved) return current
         if (justSayNo.ids.isEmpty()) return current
         val jsnCards = justSayNo.ids.map { cardMapping[it] ?: return current }
         if (jsnCards.any {

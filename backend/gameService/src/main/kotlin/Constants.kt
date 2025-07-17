@@ -24,6 +24,7 @@ const val PLAY_PROPERTY_ACTION = "PlayProperty"
 const val PLAY_MONEY_ACTION = "PlayMoney"
 const val REQUEST_RENT_ACTION = "RequestRent"
 const val ACCEPT_CHARGE_ACTION = "AcceptCharge"
+const val ACCEPT_JUST_SAY_NO_ACTION = "AcceptJustSayNo"
 const val JUST_SAY_NO_ACTION = "JustSayNo"
 val cardMapping = createCardMapping()
 val deck = cardMapping.values
