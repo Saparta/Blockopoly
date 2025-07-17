@@ -26,8 +26,8 @@ suspend fun applyAction(room: DealGame, game: MutableStateFlow<GameState>, playe
         is JustSayNo -> justSayNo(room, game, playerId, action)
         is AcceptJsn -> acceptJsn(room, game, playerId, action)
         is PassGo -> passGo(room, game, playerId, action)
+        is Birthday -> itsMyBirthday(room, game, playerId, action)
+        is DebtCollect -> debtCollect(room, game, playerId, action)
         is EndTurn -> endTurn(room, game, playerId)
-        is Birthday -> TODO()
-        is DebtCollect -> TODO()
     }
 }
