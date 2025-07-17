@@ -60,21 +60,22 @@ class PropertyCollection {
         }
     }
 
-    fun addDevelopment(development: Card.Action, propertySetId: String) {
-        if (development.actionType !in arrayOf(ActionType.HOTEL, ActionType.HOTEL)) return
-        val propertySet = collection[propertySetId] ?: return
-        if (!propertySet.isComplete) return
+    fun addDevelopment(development: Card.Action, propertySetId: String) : Unit? {
+        if (development.actionType !in arrayOf(ActionType.HOTEL, ActionType.HOTEL)) return null
+        val propertySet = collection[propertySetId] ?: return null
+        if (!propertySet.isComplete) return null
         when (development.actionType) {
             ActionType.HOUSE -> {
-                if (propertySet.house != null) return
+                if (propertySet.house != null) return null
                 propertySet.house = development
             }
             ActionType.HOTEL -> {
-                if (propertySet.house == null || propertySet.hotel != null) return
+                if (propertySet.house == null || propertySet.hotel != null) return null
                 propertySet.hotel = development
             }
-            else -> return
+            else -> return null
         }
+        return Unit
     }
 
     fun isDevelopmentInCollection(development: Card.Action): Boolean {

@@ -10,6 +10,7 @@ import com.gameservice.models.GameAction
 import com.gameservice.models.GameState
 import com.gameservice.models.JustSayNo
 import com.gameservice.models.PassGo
+import com.gameservice.models.PlayDevelopment
 import com.gameservice.models.PlayMoney
 import com.gameservice.models.PlayProperty
 import com.gameservice.models.RequestRent
@@ -28,6 +29,7 @@ suspend fun applyAction(room: DealGame, game: MutableStateFlow<GameState>, playe
         is PassGo -> passGo(room, game, playerId, action)
         is Birthday -> itsMyBirthday(room, game, playerId, action)
         is DebtCollect -> debtCollect(room, game, playerId, action)
+        is PlayDevelopment -> playDevelopment(room, game, playerId, action)
         is EndTurn -> endTurn(room, game, playerId)
     }
 }

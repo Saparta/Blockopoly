@@ -66,6 +66,10 @@ data class JustSayNoMessage(val playerId: String, val respondingTo: String) : So
 @SerialName("DEBT_COLLECTOR")
 data class DebtCollectMessage(override val requester: String, val target: String, val cardId: Int) : SocketMessage, MultiStepInitiator
 
+
+@Serializable
+@SerialName("DEVELOPMENT_ADDED")
+data class DevelopmentAddedMessage(val development: Card.Action, val placedOn: String) : SocketMessage
 @Serializable
 @SerialName("BIRTHDAY")
 data class BirthdayMessage(override val requester: String, val cardId: Int) : SocketMessage, MultiStepInitiator

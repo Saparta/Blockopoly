@@ -52,3 +52,7 @@ data class DebtCollect(val id: Int, val target: String) : GameAction
 @Serializable
 @SerialName("Birthday")
 data class Birthday(val id: Int) : GameAction
+
+@Serializable
+@SerialName("PlayDevelopment")
+data class PlayDevelopment(val id: Int, val propertySetId: String) : GameAction

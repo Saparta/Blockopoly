@@ -33,6 +33,6 @@ suspend fun itsMyBirthday(room: DealGame, gameState: MutableStateFlow<GameState>
         room.sendBroadcast(birthdayMessage)
         current.discardPile.add(card)
         playerState.hand.removeIf { it.id == card.id }
-        return current.copy(cardsLeftToPlay = current.cardsLeftToPlay - 1)
+        return@updateAndGet current.copy(cardsLeftToPlay = current.cardsLeftToPlay - 1)
     }
 }
