@@ -11,6 +11,7 @@ fun acceptJsn(room: DealGame, gameState: MutableStateFlow<GameState>, playerId: 
     return gameState.updateAndGet { current ->
         if (!current.pendingInteractions.isInitiator(playerId)) return current
         val interaction = current.pendingInteractions.getTargetedInteraction(acceptJsn.respondingTo) ?: return current
+        if (interaction.offense.isEmpty() && interaction.defense.isEmpty()) return current // No JSNs to accept
         if (isActionCancelled(interaction)) {
             current.pendingInteractions.remove(interaction)
         } else {
@@ -22,5 +23,5 @@ fun acceptJsn(room: DealGame, gameState: MutableStateFlow<GameState>, playerId: 
 }
 
 fun isActionCancelled(interaction: PendingInteraction) : Boolean {
-    return interaction.initial.size + interaction.offense.size == interaction.defense.size
+    return (interaction.initial.size + interaction.offense.size) == interaction.defense.size
 }

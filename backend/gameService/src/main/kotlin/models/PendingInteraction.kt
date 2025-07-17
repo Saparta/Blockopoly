@@ -5,7 +5,6 @@ import kotlinx.serialization.Transient
 
 @Serializable
 class Interactions {
-    @Transient
     private val _pendingInteractions: MutableList<PendingInteraction> = mutableListOf()
     @Transient
     private val targetToInteraction = mutableMapOf<String, PendingInteraction>()
@@ -45,7 +44,7 @@ class Interactions {
 data class PendingInteraction(
     val fromPlayer: String,
     val toPlayer: String,
-    val action: MultiStepInteraction,
+    val action: MultiStepInitiator,
     val initial: List<Int>,
     var awaitingResponseFrom: String,
     val offense: MutableList<Int> = mutableListOf(),

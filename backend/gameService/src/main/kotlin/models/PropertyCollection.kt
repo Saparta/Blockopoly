@@ -16,11 +16,11 @@ class PropertyCollection {
         }
         if (result == null) {
             val setId = UUID.randomUUID().toString().replace("-","")
-            collection.put( setId,
+            collection.put(setId,
                 PropertySet(
                     setId,
                     mutableListOf(property),
-                    withColor
+                    if (property.colors != Color.entries.toSet()) withColor else null
                 )
             )
             propertyToSetId[property.id] = setId

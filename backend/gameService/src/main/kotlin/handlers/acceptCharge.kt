@@ -1,37 +1,37 @@
 package com.gameservice.handlers
 
+import com.gameservice.BIRTHDAY_PAYMENT_AMOUNT
+import com.gameservice.DEBT_COLLECTOR_PAYMENT_AMOUNT
 import com.gameservice.DealGame
-import com.gameservice.cardMapping
 import com.gameservice.models.AcceptCharge
+import com.gameservice.models.BirthdayMessage
+import com.gameservice.models.DebtCollectMessage
 import com.gameservice.models.GameState
 import com.gameservice.models.PaymentEarningsMessage
 import com.gameservice.models.PendingInteraction
 import com.gameservice.models.RentRequestMessage
 import com.gameservice.util.pay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.updateAndGet
 
 suspend fun acceptCharge(room: DealGame, game: MutableStateFlow<GameState>, playerId: String, payment: AcceptCharge) : GameState {
-    val current = game.value
-    val interaction = current.pendingInteractions.getTargetedInteraction(playerId) ?: return current
-    if (interaction.awaitingResponseFrom != playerId) return current
-    return when (interaction.action) {
-        is RentRequestMessage -> handleRentPayment(room, current, playerId, payment, interaction)
-        else -> return current
+    return game.updateAndGet { current ->
+        val interaction = current.pendingInteractions.getTargetedInteraction(playerId) ?: return current
+        if (interaction.awaitingResponseFrom != playerId) return current
+        return@updateAndGet handlePayment(room, current, playerId, payment, interaction)
     }
 }
 
-suspend fun handleRentPayment(room: DealGame, gameState: GameState, playerId: String, payment: AcceptCharge, interaction: PendingInteraction) : GameState {
-    val paymentCards = payment.payment.map { cardMapping[it] ?: return gameState }
-    val playerState = gameState.playerState[playerId] ?: return gameState
-    val request = interaction.action as? RentRequestMessage ?: return gameState
-    val amountRequested = resolveRentJSNStack(interaction)
-    if (playerState.totalValue() <= amountRequested) {
-        if (playerState.getNumOfSellableCards() != paymentCards.size) return gameState
-    } else {
-        if (paymentCards.sumOf { it.value ?: return gameState } < amountRequested) return gameState
+suspend fun handlePayment(room: DealGame, gameState: GameState, playerId: String, payment: AcceptCharge, interaction: PendingInteraction) : GameState {
+    if (interaction.initial.size + interaction.offense.size == interaction.defense.size) return gameState
+    val request = interaction.action
+    val amountRequested = when (interaction.action) {
+        is BirthdayMessage -> BIRTHDAY_PAYMENT_AMOUNT
+        is DebtCollectMessage -> DEBT_COLLECTOR_PAYMENT_AMOUNT
+        is RentRequestMessage -> resolveRentJSNStack(interaction)
     }
 
-    val (success, propertyDestinations, bankCards) = pay(gameState, playerId, request.requester, payment.payment)
+    val (success, propertyDestinations, bankCards) = pay(gameState, playerId, request.requester, payment.payment, amountRequested)
     if (!success) return gameState
     gameState.pendingInteractions.remove(interaction)
     room.sendBroadcast(

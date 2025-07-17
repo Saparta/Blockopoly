@@ -3,10 +3,13 @@ package com.gameservice.handlers
 import com.gameservice.DealGame
 import com.gameservice.models.AcceptCharge
 import com.gameservice.models.AcceptJsn
+import com.gameservice.models.Birthday
+import com.gameservice.models.DebtCollect
 import com.gameservice.models.EndTurn
 import com.gameservice.models.GameAction
 import com.gameservice.models.GameState
 import com.gameservice.models.JustSayNo
+import com.gameservice.models.PassGo
 import com.gameservice.models.PlayMoney
 import com.gameservice.models.PlayProperty
 import com.gameservice.models.RequestRent
@@ -22,6 +25,9 @@ suspend fun applyAction(room: DealGame, game: MutableStateFlow<GameState>, playe
         is AcceptCharge -> acceptCharge(room, game, playerId, action)
         is JustSayNo -> justSayNo(room, game, playerId, action)
         is AcceptJsn -> acceptJsn(room, game, playerId, action)
+        is PassGo -> passGo(room, game, playerId, action)
         is EndTurn -> endTurn(room, game, playerId)
+        is Birthday -> TODO()
+        is DebtCollect -> TODO()
     }
 }

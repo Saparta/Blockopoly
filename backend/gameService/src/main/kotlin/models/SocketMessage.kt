@@ -10,7 +10,9 @@ sealed interface SocketMessage {
     fun toJson() = Json.encodeToString(serializer(),this)
 }
 
-sealed interface MultiStepInteraction : SocketMessage
+sealed interface MultiStepInitiator : SocketMessage {
+    val requester: String
+}
 
 @Serializable
 @SerialName("LEAVE")
@@ -37,6 +39,10 @@ data class StartMessage(val playerId: String) : SocketMessage
 data class DiscardMessage(val playerId: String, val card: Card) : SocketMessage
 
 @Serializable
+@SerialName("PLAY_UNSTOPPABLE_ACTION")
+data class PlayUnstoppableActionMessage(val playerId: String, val card: Card) : SocketMessage
+
+@Serializable
 @SerialName("PLACE_IN_BANK")
 data class PlaceInBankMessage(val playerId: String, val card: Card) : SocketMessage
 
@@ -50,8 +56,16 @@ data class PaymentEarningsMessage(val receiver: String, val giver: String, val p
 
 @Serializable
 @SerialName("RENT_REQUEST")
-data class RentRequestMessage(val requester: String, val targets: List<String>, val cardsUsed: List<Int>, val amount: Int) : SocketMessage, MultiStepInteraction
+data class RentRequestMessage(override val requester: String, val targets: List<String>, val cardsUsed: List<Int>, val amount: Int) : SocketMessage, MultiStepInitiator
 
 @Serializable
 @SerialName("JUST_SAY_NO")
 data class JustSayNoMessage(val playerId: String, val respondingTo: String) : SocketMessage
+
+@Serializable
+@SerialName("DEBT_COLLECTOR")
+data class DebtCollectMessage(override val requester: String, val target: String) : SocketMessage, MultiStepInitiator
+
+@Serializable
+@SerialName("BIRTHDAY")
+data class BirthdayMessage(override val requester: String, val cardId: Int) : SocketMessage, MultiStepInitiator

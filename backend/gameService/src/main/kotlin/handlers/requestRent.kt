@@ -70,6 +70,7 @@ suspend fun requestRent(room: DealGame, game: MutableStateFlow<GameState>, playe
             }
         }
         room.sendBroadcast(rentRequestMessage)
+        playerState.hand.removeIf { it.id in cardsUsed }
         current.discardPile.addAll(doublers + rentCard)
         return@updateAndGet current.copy(cardsLeftToPlay = current.cardsLeftToPlay - numCardsConsumed)
     }

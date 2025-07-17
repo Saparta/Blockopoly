@@ -7,10 +7,17 @@ import com.gameservice.models.GameState
 
 data class PayResponse(val success: Boolean = false, val propertyToDestinations: Map<Int, String> = emptyMap(), val bankCards: Set<Int> = emptySet())
 
-fun pay(gameState: GameState, giver: String, receiver: String, payment: List<Int>) : PayResponse {
+fun pay(gameState: GameState, giver: String, receiver: String, payment: List<Int>, amountRequested: Int) : PayResponse {
     val paymentCards = payment.map { cardMapping[it] ?: return PayResponse() }
     val playerState = gameState.playerState[giver] ?: return PayResponse()
     val receiverPlayerState = gameState.playerState[receiver] ?: return PayResponse()
+
+    if (playerState.totalValue() <= amountRequested) {
+        if (playerState.getNumOfSellableCards() != paymentCards.size) return PayResponse()
+    } else {
+        if (paymentCards.sumOf { it.value ?: return PayResponse() } < amountRequested) return PayResponse()
+    }
+
     // Validate each card as belonging to paying player before starting payment
     paymentCards.forEach { card ->
         when (card) {
