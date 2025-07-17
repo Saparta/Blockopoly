@@ -37,6 +37,7 @@ fun Application.configureRouting() {
         }
         post("/start/{roomId}") {
             // TODO: Use JWT + playerId from request body to guarantee the user starting the room is part of the room
+            // TODO: Address race condition(room marked as startable but player count then drops below 2) with Redis Multi and Exec
             call.application.environment.log.info("Starting game")
             val redis = call.application.attributes[LETTUCE_REDIS_COMMANDS_KEY]
             val roomId = call.parameters["roomId"] ?: return@post call.respond(HttpStatusCode.BadRequest)

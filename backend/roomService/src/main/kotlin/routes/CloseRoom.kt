@@ -3,6 +3,7 @@ package com.roomservice.routes
 import com.roomservice.LETTUCE_REDIS_COMMANDS_KEY
 import com.roomservice.PLAYER_TO_NAME_PREFIX
 import com.roomservice.PLAYER_TO_ROOM_PREFIX
+import com.roomservice.ROOM_START_STATUS_PREFIX
 import com.roomservice.ROOM_TO_JOIN_CODE_PREFIX
 import com.roomservice.ROOM_TO_PLAYERS_PREFIX
 import com.roomservice.RoomBroadcastType
@@ -20,7 +21,7 @@ suspend fun closeRoomHandler(call: ApplicationCall? = null, roomId: String? = nu
 
     redis.del(ROOM_TO_PLAYERS_PREFIX + roomId, ROOM_TO_JOIN_CODE_PREFIX + roomId)
     for (player in players.await()) {
-        redis.del(PLAYER_TO_ROOM_PREFIX + player, PLAYER_TO_NAME_PREFIX + player)
+        redis.del(PLAYER_TO_ROOM_PREFIX + player, PLAYER_TO_NAME_PREFIX + player, ROOM_START_STATUS_PREFIX + roomId)
     }
     redis.publish(roomId, RoomBroadcast(RoomBroadcastType.CLOSED, "").toString())
     call?.respond(HttpStatusCode.OK)
