@@ -2,9 +2,9 @@ package com.gameservice.handlers
 
 import com.gameservice.DealGame
 import com.gameservice.cardMapping
+import com.gameservice.models.ALL_COLOR_SET
 import com.gameservice.models.ActionType
 import com.gameservice.models.Card
-import com.gameservice.models.Color
 import com.gameservice.models.GameState
 import com.gameservice.models.PendingInteraction
 import com.gameservice.models.RentRequestMessage
@@ -26,7 +26,7 @@ suspend fun requestRent(room: DealGame, game: MutableStateFlow<GameState>, playe
             }
             return@map doubleRentCard
         }
-        val isWildRent = rentCard.colors.size == Color.entries.size
+        val isWildRent = rentCard.colors == ALL_COLOR_SET
         val validTargeting = (isWildRent && rentRequest.target != null) || (!isWildRent && rentRequest.target == null)
         if (doublers.any { !current.isCardInHand(playerId, it) }) return current
         val setBeingCharged = playerState.getPropertySet(rentRequest.rentingSetId) ?: return current

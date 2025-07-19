@@ -54,5 +54,12 @@ data class DebtCollect(val id: Int, val target: String) : GameAction
 data class Birthday(val id: Int) : GameAction
 
 @Serializable
+@SerialName("SlyDeal")
+data class SlyDeal(val id: Int, val targetCard: Int, val colorToReceiveAs: Color?) : GameAction
+
+@Serializable
+@SerialName("AcceptDeal")
+data class AcceptDeal(val receiveAsColor: Color?) : GameAction
+@Serializable
 @SerialName("PlayDevelopment")
 data class PlayDevelopment(val id: Int, val propertySetId: String) : GameAction

@@ -29,6 +29,7 @@ suspend fun handlePayment(room: DealGame, gameState: GameState, playerId: String
         is BirthdayMessage -> BIRTHDAY_PAYMENT_AMOUNT
         is DebtCollectMessage -> DEBT_COLLECTOR_PAYMENT_AMOUNT
         is RentRequestMessage -> resolveRentJSNStack(interaction)
+        else -> return gameState
     }
 
     val (success, propertyDestinations, bankCards) = pay(gameState, playerId, request.requester, payment.payment, amountRequested)

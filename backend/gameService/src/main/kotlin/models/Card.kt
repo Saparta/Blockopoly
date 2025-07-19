@@ -8,6 +8,8 @@ enum class Color{
     BROWN, BLUE, GREEN, TURQOUISE, UTILITY, RAILROAD, ORANGE, MAGENTA, RED, YELLOW
 }
 
+val ALL_COLOR_SET = Color.entries.toSet()
+
 @Serializable
 enum class CardType {
     ACTION,
@@ -88,14 +90,13 @@ fun createCardMapping() : Map<Int, Card> {
         repeat(2) { id++; put(id, Card.Action(id, 4, ActionType.HOTEL))}
         repeat(2) { id++; put(id, Card.Action(id, 1, ActionType.DOUBLE_RENT))}
         repeat(10) { id++; put(id, Card.Action(id, 1, ActionType.PASS_GO))}
-
         // Rent cards
         repeat(2) { id++; put(id, Card.Rent(id, 1, ActionType.RENT, setOf(Color.BLUE, Color.GREEN)))}
         repeat(2) { id++; put(id, Card.Rent(id, 1, ActionType.RENT, setOf(Color.BROWN, Color.TURQOUISE)))}
         repeat(2) { id++; put(id, Card.Rent(id, 1, ActionType.RENT, setOf(Color.MAGENTA, Color.ORANGE)))}
         repeat(2) { id++; put(id, Card.Rent(id, 1, ActionType.RENT, setOf(Color.RED, Color.YELLOW)))}
         repeat(2) { id++; put(id, Card.Rent(id, 1, ActionType.RENT, setOf(Color.RAILROAD, Color.UTILITY)))}
-        repeat(3) { id++; put(id, Card.Rent(id, 3, ActionType.WILD_RENT, Color.entries.toSet()))}
+        repeat(3) { id++; put(id, Card.Rent(id, 3, ActionType.WILD_RENT, ALL_COLOR_SET))}
 
         // Properties
         repeat(2) { id++; put(id, Card.Property(id, setOf(Color.BLUE), 4))}
@@ -116,7 +117,8 @@ fun createCardMapping() : Map<Int, Card> {
         repeat(1) {id++; put(id, Card.Property(id, setOf(Color.RAILROAD, Color.TURQOUISE), 2))}
         repeat(1) {id++; put(id, Card.Property(id, setOf(Color.RAILROAD, Color.UTILITY), 2))}
         repeat(2) {id++; put(id, Card.Property(id, setOf(Color.RED, Color.YELLOW), 3))}
-        repeat(2) {id++; put(id, Card.Property(id, Color.entries.toSet(), null))}
+        repeat(2) {id++; put(id, Card.Property(id, ALL_COLOR_SET, null))}
+
         // Money cards
         repeat(6) { id++; put(id, Card.Money(id, 1))}
         repeat(5) { id++; put(id, Card.Money(id, 2))}
