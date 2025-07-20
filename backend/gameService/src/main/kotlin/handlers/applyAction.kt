@@ -16,6 +16,7 @@ import com.gameservice.models.PlayMoney
 import com.gameservice.models.PlayProperty
 import com.gameservice.models.RequestRent
 import com.gameservice.models.SlyDeal
+import com.gameservice.models.ForcedDeal
 import com.gameservice.models.StartTurn
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -33,6 +34,7 @@ suspend fun applyAction(room: DealGame, game: MutableStateFlow<GameState>, playe
         is DebtCollect -> debtCollect(room, game, playerId, action)
         is PlayDevelopment -> playDevelopment(room, game, playerId, action)
         is SlyDeal -> slyDeal(room, game, playerId, action)
+        is ForcedDeal -> forcedDeal(room, game, playerId, action)
         is AcceptDeal -> acceptDeal(room, game, playerId, action)
         is EndTurn -> endTurn(room, game, playerId)
     }

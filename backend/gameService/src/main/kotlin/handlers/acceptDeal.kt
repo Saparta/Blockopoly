@@ -5,6 +5,8 @@ import com.gameservice.cardMapping
 import com.gameservice.models.AcceptDeal
 import com.gameservice.models.Card
 import com.gameservice.models.Color
+import com.gameservice.models.ForcedDealAcceptedMessage
+import com.gameservice.models.ForcedDealMessage
 import com.gameservice.models.GameState
 import com.gameservice.models.PlayerState
 import com.gameservice.models.SlyDealAcceptedMessage
@@ -23,7 +25,8 @@ suspend fun acceptDeal(room: DealGame, game: MutableStateFlow<GameState>, player
         when (request) {
             is SlyDealMessage -> {
                 val targetCardInstance = cardMapping[request.targetCard] ?: return current
-                val destination = transferCard(receiverState, giverState, request.receivingAs, targetCardInstance) ?: return current
+                if (targetCardInstance !is Card.Property) return current
+                val destination = transferPropertyCard(receiverState, giverState, request.receivingAs, targetCardInstance) ?: return current
                 current.pendingInteractions.remove(interaction)
                 room.sendBroadcast(
                     SlyDealAcceptedMessage(
@@ -34,23 +37,34 @@ suspend fun acceptDeal(room: DealGame, game: MutableStateFlow<GameState>, player
                     )
                 )
             }
+            is ForcedDealMessage -> {
+                val targetCardInstance = cardMapping[request.targetCard] ?: return current
+                if (targetCardInstance !is Card.Property) return current
+                val cardToGiveInstance = cardMapping[request.requesterCard] ?: return current
+                if (cardToGiveInstance !is Card.Property) return current
+
+                val requesterDestinationSet = transferPropertyCard(receiverState, giverState, request.requesterReceivingAs, targetCardInstance) ?: return current
+                val targetDestinationSet = transferPropertyCard(giverState, receiverState, action.receiveAsColor, cardToGiveInstance) ?: return current
+
+                current.pendingInteractions.remove(interaction)
+                room.sendBroadcast(
+                    ForcedDealAcceptedMessage(
+                        interaction.fromPlayer,
+                        interaction.toPlayer,
+                        request.targetCard,
+                        requesterDestinationSet,
+                        request.requesterCard,
+                        targetDestinationSet
+                    )
+                )
+            }
             else -> return current
         }
         return@updateAndGet current.copy()
     }
 }
 
-fun transferCard(receiverState: PlayerState, giverState: PlayerState, receiveAs: Color?, card: Card) : String? {
-    when (card) {
-        is Card.Property -> {
-            giverState.removeProperty(card) ?: return null
-            return receiverState.addProperty(card, receiveAs)
-        }
-        is Card.Action -> {
-            if (receiveAs == null) return null
-            giverState.removeDevelopment(card) ?: return null
-            return receiverState.addDevelopment(card, receiveAs)
-        }
-        else -> return null
-    }
+fun transferPropertyCard(receiverState: PlayerState, giverState: PlayerState, receiveAs: Color?, card: Card.Property) : String? {
+    giverState.removeProperty(card) ?: return null
+    return receiverState.addProperty(card, receiveAs)
 }

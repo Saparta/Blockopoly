@@ -15,7 +15,15 @@ data class PlayerState(val hand: MutableList<Card>, private val propertyCollecti
     }
 
     fun addProperty(property: Card.Property, withColor: Color?) : String? = propertyCollection.addProperty(property, withColor)
-    fun removeProperty(property: Card.Property) : Unit? = propertyCollection.removeProperty(property)
+    fun removeProperty(property: Card.Property) : Unit? {
+        val developmentsRemoved = propertyCollection.removeProperty(property)
+        if (developmentsRemoved == null) {
+            return null
+        } else {
+            developmentsRemoved.forEach(bank::add)
+        }
+        return Unit
+    }
     fun isPropertyInCollection(property: Card.Property) : Boolean = propertyCollection.isPropertyInCollection(property)
     fun addDevelopment(development: Card.Action, color: Color) : String? = propertyCollection.addDevelopment(development, color)?.propertySetId
     fun addDevelopment(development: Card.Action, propertySetId: String) : Unit? = propertyCollection.addDevelopment(development, propertySetId)

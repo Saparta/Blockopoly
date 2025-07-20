@@ -77,3 +77,11 @@ data class SlyDealMessage(override val requester: String, val targetPlayer: Stri
 @Serializable
 @SerialName("SLY_DEAL_ACCEPTED")
 data class SlyDealAcceptedMessage(val requester: String, val targetPlayer: String, val cardTaken: Int, val destinationSet: String) : SocketMessage
+
+@Serializable
+@SerialName("FORCED_DEAL")
+data class ForcedDealMessage(override val requester: String, val targetPlayer: String, val requesterCard: Int, val requesterReceivingAs: Color?, val targetCard: Int) : SocketMessage, MultiStepInitiator
+
+@Serializable
+@SerialName("FORCED_DEAL_ACCEPTED")
+data class ForcedDealAcceptedMessage(val requester: String, val targetPlayer: String, val cardTaken: Int, val requesterDestinationSet: String, val cardGiven: Int, val targetDestinationSet: String) : SocketMessage

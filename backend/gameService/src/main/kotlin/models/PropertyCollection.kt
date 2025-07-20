@@ -32,14 +32,18 @@ class PropertyCollection {
         }
     }
 
-    fun removeProperty(property: Card.Property) : Unit? {
+    fun removeProperty(property: Card.Property) : Set<Card>? {
+        val developmentsRemoved = mutableSetOf<Card>()
         val removedFrom: PropertySet? = propertyToSetId[property.id]?.let {
-            return@let if (collection[it]?.removeProperty(property) ?: false) collection[it] else null
+            val (wasRemoved, removedDevelopments) = collection[it]?.removeProperty(property) ?: return@let null
+            if (removedDevelopments != null) developmentsRemoved.addAll(removedDevelopments)
+            return@let if (wasRemoved) collection[it] else null
         }
 
         return removedFrom?.let {
             propertyToSetId.remove(property.id)
             if (it.isSetEmpty()) collection.remove(it.propertySetId)
+            return@let developmentsRemoved
         }
     }
 
@@ -102,27 +106,40 @@ data class PropertySet(val propertySetId: String, private val properties: Mutabl
     }
 
     fun addProperty(property: Card.Property, withColor: Color?) {
+        // Prevents single-color set invariant break
+        if (withColor == null && property.colors != ALL_COLOR_SET) return
+        if (withColor != null && !property.colors.contains(withColor)) return
+        if (withColor != color && color != null) return
+        if (isComplete) return // Prevents oversized set
         if (color == null) {
             color = if (property.colors == ALL_COLOR_SET) null else withColor // Rainbow Wild can't determine color
         }
-        if (!property.colors.contains(withColor) || (withColor != color && color != null)) return // Prevents single-color set invariant break
         properties.add(property)
         if (isCompleteSet()) {
             isComplete = true
         }
     }
 
-    fun removeProperty(property: Card.Property) : Boolean {
+    fun removeProperty(property: Card.Property) : Pair<Boolean, Set<Card>?> {
         val wasRemoved = properties.removeIf { prop -> prop.id == property.id }
+        val developmentsRemoved = mutableSetOf<Card>()
         if (wasRemoved) {
             if (properties.all { it.colors == ALL_COLOR_SET }) { // If all rainbow wilds, set color to null
                 color = null
             }
             if (!isCompleteSet()) {
                 isComplete = false
+                house?.apply {
+                    developmentsRemoved.add(house!!)
+                    house = null
+                }
+                hotel?.apply {
+                    developmentsRemoved.add(hotel!!)
+                    hotel = null
+                }
             }
         }
-        return wasRemoved
+        return Pair(wasRemoved, developmentsRemoved)
     }
 
     fun totalValue(): Int {
