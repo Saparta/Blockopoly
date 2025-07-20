@@ -85,3 +85,11 @@ data class ForcedDealMessage(override val requester: String, val targetPlayer: S
 @Serializable
 @SerialName("FORCED_DEAL_ACCEPTED")
 data class ForcedDealAcceptedMessage(val requester: String, val targetPlayer: String, val cardTaken: Int, val requesterDestinationSet: String, val cardGiven: Int, val targetDestinationSet: String) : SocketMessage
+
+@Serializable
+@SerialName("DEALBREAKER")
+data class DealbreakerMessage(override val requester: String, val targetPlayer: String, val targetSetId: String) : SocketMessage, MultiStepInitiator
+
+@Serializable
+@SerialName("DEALBREAKER_ACCEPTED")
+data class DealbreakerAcceptedMessage(val requester: String, val targetPlayer: String, val takenSetId: String) : SocketMessage

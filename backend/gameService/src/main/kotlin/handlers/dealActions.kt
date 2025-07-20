@@ -10,6 +10,8 @@ import com.gameservice.models.GameState
 import com.gameservice.models.PendingInteraction
 import com.gameservice.models.SlyDeal
 import com.gameservice.models.SlyDealMessage
+import com.gameservice.models.Dealbreaker
+import com.gameservice.models.DealbreakerMessage
 import com.gameservice.util.playerToStealCardFrom
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.updateAndGet
@@ -65,6 +67,34 @@ suspend fun forcedDeal(room: DealGame, gameState: MutableStateFlow<GameState>, p
         room.sendBroadcast(forcedDealMessage)
         current.discardPile.add(forcedDealCard)
         playerState.hand.removeIf { it.id == forcedDealCard.id }
+        return@updateAndGet current.copy(cardsLeftToPlay = current.cardsLeftToPlay - 1)
+    }
+}
+
+suspend fun dealbreaker(room: DealGame, gameState: MutableStateFlow<GameState>, playerId: String, action: Dealbreaker) : GameState {
+    return gameState.updateAndGet { current ->
+        if (current.pendingInteractions.isNotEmpty() || current.playerAtTurn != playerId) return current
+        val playerState = current.playerState[playerId] ?: return current
+        val card = cardMapping[action.id] ?: return current
+        if (card !is Card.Action || card.actionType != ActionType.DEAL_BREAKER || !current.isCardInHand(playerId, card) || current.cardsLeftToPlay <= 0) return current
+
+        val targetPlayerEntry = current.playerState.entries.find { entry ->
+            entry.value.getPropertySet(action.targetSetId)?.isComplete == true
+        } ?: return current
+
+        val dealbreakerMessage = DealbreakerMessage(playerId, targetPlayerEntry.key, action.targetSetId)
+        current.pendingInteractions.add(
+            PendingInteraction(
+                fromPlayer = playerId,
+                toPlayer = targetPlayerEntry.key,
+                action = dealbreakerMessage,
+                initial = listOf(action.id),
+                awaitingResponseFrom = targetPlayerEntry.key,
+            )
+        )
+        room.sendBroadcast(dealbreakerMessage)
+        current.discardPile.add(card)
+        playerState.hand.removeIf { it.id == card.id }
         return@updateAndGet current.copy(cardsLeftToPlay = current.cardsLeftToPlay - 1)
     }
 }

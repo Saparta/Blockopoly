@@ -38,4 +38,8 @@ data class PlayerState(val hand: MutableList<Card>, private val propertyCollecti
         if (development.actionType !in DEVELOPMENT_ACTION_CARDS) return null
         return propertyCollection.getSetOfDevelopment(development.id)
     }
+
+    fun removePropertySet(setId: String) : PropertySet? = propertyCollection.removePropertySet(setId)
+
+    fun addPropertySet(set: PropertySet) = propertyCollection.addPropertySet(set)
 }

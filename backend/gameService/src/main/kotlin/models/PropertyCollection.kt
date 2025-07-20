@@ -95,6 +95,19 @@ class PropertyCollection {
     fun getNumOfSellableCards() : Int {
         return collection.values.fold(0) { acc, propertySet -> acc + propertySet.getNumOfSellableCards() }
     }
+
+    fun removePropertySet(setId: String) : PropertySet? {
+        val set = collection.remove(setId) ?: return null
+        set.getCardIds().forEach(propertyToSetId::remove)
+        set.getDevelopmentIds().forEach(developmentsToSetId::remove)
+        return set
+    }
+
+    fun addPropertySet(set: PropertySet) {
+        collection[set.propertySetId] = set
+        set.getCardIds().forEach { propertyToSetId[it] = set.propertySetId }
+        set.getDevelopmentIds().forEach { developmentsToSetId[it] = set.propertySetId }
+    }
 }
 
 @Serializable
@@ -173,5 +186,16 @@ data class PropertySet(val propertySetId: String, private val properties: Mutabl
             else -> return null
         }
         return Unit
+    }
+
+    fun getCardIds() : List<Int> {
+        return properties.map { it.id }
+    }
+
+    fun getDevelopmentIds() : List<Int> {
+        val ids = mutableListOf<Int>()
+        house?.let { ids.add(it.id) }
+        hotel?.let { ids.add(it.id) }
+        return ids
     }
 }

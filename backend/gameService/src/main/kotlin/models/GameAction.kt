@@ -64,6 +64,10 @@ data class AcceptDeal(val receiveAsColor: Color?) : GameAction
 @Serializable
 @SerialName("ForcedDeal")
 data class ForcedDeal(val id: Int, val targetCard: Int, val cardToGive: Int, val colorToReceiveAs: Color?) : GameAction
+
+@Serializable
+@SerialName("Dealbreaker")
+data class Dealbreaker(val id: Int, val targetSetId: String) : GameAction
 @Serializable
 @SerialName("PlayDevelopment")
 data class PlayDevelopment(val id: Int, val propertySetId: String) : GameAction

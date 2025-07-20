@@ -5,6 +5,8 @@ import com.gameservice.cardMapping
 import com.gameservice.models.AcceptDeal
 import com.gameservice.models.Card
 import com.gameservice.models.Color
+import com.gameservice.models.DealbreakerAcceptedMessage
+import com.gameservice.models.DealbreakerMessage
 import com.gameservice.models.ForcedDealAcceptedMessage
 import com.gameservice.models.ForcedDealMessage
 import com.gameservice.models.GameState
@@ -55,6 +57,18 @@ suspend fun acceptDeal(room: DealGame, game: MutableStateFlow<GameState>, player
                         requesterDestinationSet,
                         request.requesterCard,
                         targetDestinationSet
+                    )
+                )
+            }
+            is DealbreakerMessage -> {
+                val takenSet = giverState.removePropertySet(request.targetSetId) ?: return current
+                receiverState.addPropertySet(takenSet)
+                current.pendingInteractions.remove(interaction)
+                room.sendBroadcast(
+                    DealbreakerAcceptedMessage(
+                        interaction.fromPlayer,
+                        interaction.toPlayer,
+                        request.targetSetId
                     )
                 )
             }
