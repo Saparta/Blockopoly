@@ -19,10 +19,6 @@ sealed interface MultiStepInitiator : SocketMessage {
 data class LeaveMessage(val playerId: String) : SocketMessage
 
 @Serializable
-@SerialName("PLAY_ORDER")
-data class PlayOrderMessage(val playOrder: List<String>) : SocketMessage
-
-@Serializable
 @SerialName("STATE")
 data class StateMessage(val gameState: VisibleGameState) : SocketMessage
 

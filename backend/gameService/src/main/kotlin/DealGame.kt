@@ -5,7 +5,6 @@ import com.gameservice.models.Command
 import com.gameservice.models.DrawMessage
 import com.gameservice.models.GameState
 import com.gameservice.models.LeaveMessage
-import com.gameservice.models.PlayOrderMessage
 import com.gameservice.models.SocketMessage
 import com.gameservice.models.StartTurn
 import com.gameservice.models.StateMessage
@@ -91,8 +90,6 @@ class DealGame(val roomId: String, val players: List<String>) {
             if (playerSockets.containsKey(playerId)) {
                 playerSockets.get(playerId)?.close(CloseReason(CloseReason.Codes.NORMAL, "Player started new connection"))
                 if (state.isCompleted) {
-                    val playOrder = state.await().value.playerOrder
-                    session.send(PlayOrderMessage(playOrder).toJson())
                     session.send(StateMessage(state.await().value.getVisibleGameState(playerId)).toJson())
                 }
             }
@@ -102,7 +99,6 @@ class DealGame(val roomId: String, val players: List<String>) {
         if (playerSockets.size == players.size && !state.isCompleted) {
             val game = GameState(players)
             state.complete(MutableStateFlow(game))
-            broadcast(PlayOrderMessage(game.playerOrder))
 
             gameScope.launch {
                 state.await()

@@ -25,7 +25,6 @@ WORKDIR /app
 
 # Grab the shaded JAR from the previous stage
 COPY --from=builder /home/ktor/build/libs/*-all.jar app.jar
-COPY .env ./
 
 # Run as an unprivileged user (optional but recommended)
 RUN addgroup -S ktor && adduser -S ktor -G ktor
