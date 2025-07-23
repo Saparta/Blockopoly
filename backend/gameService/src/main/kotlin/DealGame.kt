@@ -4,7 +4,6 @@ import com.gameservice.handlers.applyAction
 import com.gameservice.models.Command
 import com.gameservice.models.DrawMessage
 import com.gameservice.models.GameState
-import com.gameservice.models.LeaveMessage
 import com.gameservice.models.SocketMessage
 import com.gameservice.models.StartTurn
 import com.gameservice.models.StateMessage
@@ -73,14 +72,7 @@ class DealGame(val roomId: String, val players: List<String>) {
 
     private suspend fun broadcastState(newState: GameState) {
         for ((id, session) in playerSockets) {
-            try {
-                session.send(
-                    StateMessage(newState.getVisibleGameState(id)).toJson()
-                )
-            } catch (_: Exception) {
-                playerSockets.remove(id)
-                broadcast(LeaveMessage(id))
-            }
+            session.send(StateMessage(newState.getVisibleGameState(id)).toJson())
         }
     }
 

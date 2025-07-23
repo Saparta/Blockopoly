@@ -33,7 +33,7 @@ suspend fun requestRent(room: DealGame, game: MutableStateFlow<GameState>, playe
         if (current.playerAtTurn != playerId || current.cardsLeftToPlay < numCardsConsumed || !validTargeting ||
             !current.isCardInHand(playerId, rentCard) ||
             !rentCard.colors.contains(setBeingCharged.color) ||
-            (rentRequest.target != null && current.playerState[rentRequest.target] != null)) {
+            (rentRequest.target != null && current.playerState[rentRequest.target] == null)) {
             return current
         }
 
