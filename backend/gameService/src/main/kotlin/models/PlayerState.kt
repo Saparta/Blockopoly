@@ -5,7 +5,7 @@ import com.gameservice.FAKE_CARD
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class PlayerState(val hand: MutableList<Card>, private val propertyCollection: PropertyCollection, val bank: MutableSet<Card>) {
+data class PlayerState(val hand: MutableList<Card>, internal val propertyCollection: PropertyCollection, val bank: MutableSet<Card>) {
     fun getPublicPlayerState() : PlayerState {
         return PlayerState(
             MutableList(hand.size) { FAKE_CARD },

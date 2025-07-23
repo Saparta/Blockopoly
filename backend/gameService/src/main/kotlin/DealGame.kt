@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 // Manages 1 game room
 class DealGame(val roomId: String, val players: List<String>) {
-    private val state = CompletableDeferred<MutableStateFlow<GameState>>()
+    val state = CompletableDeferred<MutableStateFlow<GameState>>()
     private val commandChannel = Channel<Command>(capacity = Channel.UNLIMITED)
     private val broadcastChannel = Channel<SocketMessage>(capacity = Channel.UNLIMITED)
     private val playerSockets = ConcurrentHashMap<String, WebSocketSession>()

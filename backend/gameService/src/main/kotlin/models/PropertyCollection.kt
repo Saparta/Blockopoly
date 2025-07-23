@@ -6,7 +6,7 @@ import java.util.UUID
 
 @Serializable
 class PropertyCollection {
-    private val collection : MutableMap<String, PropertySet> = mutableMapOf()
+    val collection : MutableMap<String, PropertySet> = mutableMapOf()
     private val propertyToSetId : MutableMap<Int, String> = mutableMapOf()
     private val developmentsToSetId : MutableMap<Int, String> = mutableMapOf()
     fun addProperty(property: Card.Property, withColor: Color?) : String? {
@@ -111,7 +111,7 @@ class PropertyCollection {
 }
 
 @Serializable
-data class PropertySet(val propertySetId: String, private val properties: MutableList<Card.Property> = mutableListOf(), var color: Color? = null, var house: Card.Action? = null, var hotel: Card.Action? = null, var isComplete: Boolean = false) {
+data class PropertySet(val propertySetId: String, val properties: MutableList<Card.Property> = mutableListOf(), var color: Color? = null, var house: Card.Action? = null, var hotel: Card.Action? = null, var isComplete: Boolean = false) {
     fun calculateRent() : Int {
         if (color == null) return 0
         if (!isComplete) return colorToRent[color]!![properties.size - 1]
