@@ -33,6 +33,7 @@ data class PlayerState(val hand: MutableList<Card>, internal val propertyCollect
     fun getSetOfProperty(property: Card.Property) : PropertySet? = propertyCollection.getSetOfProperty(property.id)
     fun getNumOfSellableCards() : Int = propertyCollection.getNumOfSellableCards() + bank.size
     fun totalValue() : Int = propertyCollection.totalValue() + bank.sumOf { it.value ?: 0 }
+    fun numCompleteSets() : Int = propertyCollection.numCompleteSets()
 
     fun getSetOfDevelopment(development: Card.Action) : PropertySet? {
         if (development.actionType !in DEVELOPMENT_ACTION_CARDS) return null

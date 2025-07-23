@@ -71,3 +71,7 @@ data class Dealbreaker(val id: Int, val targetSetId: String) : GameAction
 @Serializable
 @SerialName("PlayDevelopment")
 data class PlayDevelopment(val id: Int, val propertySetId: String) : GameAction
+
+@Serializable
+@SerialName("RestartGame")
+class RestartGame() : GameAction

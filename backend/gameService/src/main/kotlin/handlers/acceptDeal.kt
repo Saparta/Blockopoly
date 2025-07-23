@@ -1,6 +1,7 @@
 package com.gameservice.handlers
 
 import com.gameservice.DealGame
+import com.gameservice.NUM_COMPLETE_SETS_TO_WIN
 import com.gameservice.cardMapping
 import com.gameservice.models.AcceptDeal
 import com.gameservice.models.Card
@@ -74,7 +75,13 @@ suspend fun acceptDeal(room: DealGame, game: MutableStateFlow<GameState>, player
             }
             else -> return current
         }
-        return@updateAndGet current.copy()
+        var winner: String? = null
+        if (receiverState.numCompleteSets() == NUM_COMPLETE_SETS_TO_WIN) {
+            winner = interaction.fromPlayer
+        } else if (giverState.numCompleteSets() == NUM_COMPLETE_SETS_TO_WIN) {
+            winner = interaction.toPlayer
+        }
+        return@updateAndGet current.copy(winningPlayer = winner)
     }
 }
 

@@ -5,8 +5,10 @@ import com.gameservice.models.AcceptCharge
 import com.gameservice.models.AcceptDeal
 import com.gameservice.models.AcceptJsn
 import com.gameservice.models.Birthday
+import com.gameservice.models.Dealbreaker
 import com.gameservice.models.DebtCollect
 import com.gameservice.models.EndTurn
+import com.gameservice.models.ForcedDeal
 import com.gameservice.models.GameAction
 import com.gameservice.models.GameState
 import com.gameservice.models.JustSayNo
@@ -15,9 +17,8 @@ import com.gameservice.models.PlayDevelopment
 import com.gameservice.models.PlayMoney
 import com.gameservice.models.PlayProperty
 import com.gameservice.models.RequestRent
+import com.gameservice.models.RestartGame
 import com.gameservice.models.SlyDeal
-import com.gameservice.models.ForcedDeal
-import com.gameservice.models.Dealbreaker
 import com.gameservice.models.StartTurn
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -39,5 +40,6 @@ suspend fun applyAction(room: DealGame, game: MutableStateFlow<GameState>, playe
         is Dealbreaker -> dealbreaker(room, game, playerId, action)
         is AcceptDeal -> acceptDeal(room, game, playerId, action)
         is EndTurn -> endTurn(room, game, playerId)
+        is RestartGame -> return game.value
     }
 }

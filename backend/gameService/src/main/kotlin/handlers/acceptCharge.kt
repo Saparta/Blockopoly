@@ -3,6 +3,7 @@ package com.gameservice.handlers
 import com.gameservice.BIRTHDAY_PAYMENT_AMOUNT
 import com.gameservice.DEBT_COLLECTOR_PAYMENT_AMOUNT
 import com.gameservice.DealGame
+import com.gameservice.NUM_COMPLETE_SETS_TO_WIN
 import com.gameservice.models.AcceptCharge
 import com.gameservice.models.BirthdayMessage
 import com.gameservice.models.DebtCollectMessage
@@ -31,6 +32,7 @@ suspend fun handlePayment(room: DealGame, gameState: GameState, playerId: String
         is RentRequestMessage -> resolveRentJSNStack(interaction)
         else -> return gameState
     }
+    val receiverState = gameState.playerState[request.requester] ?: return gameState
 
     val (success, propertyDestinations, bankCards) = pay(gameState, playerId, request.requester, payment.payment, amountRequested)
     if (!success) return gameState
@@ -43,7 +45,11 @@ suspend fun handlePayment(room: DealGame, gameState: GameState, playerId: String
             bankCards
         )
     )
-    return gameState.copy()
+    var winner: String? = null
+    if (receiverState.numCompleteSets() == NUM_COMPLETE_SETS_TO_WIN) {
+        winner = request.requester
+    }
+    return gameState.copy(winningPlayer = winner)
 }
 
 fun resolveRentJSNStack(interaction: PendingInteraction) : Int {

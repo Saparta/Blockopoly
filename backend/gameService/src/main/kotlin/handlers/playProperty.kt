@@ -1,6 +1,7 @@
 package com.gameservice.handlers
 
 import com.gameservice.DealGame
+import com.gameservice.NUM_COMPLETE_SETS_TO_WIN
 import com.gameservice.cardMapping
 import com.gameservice.models.Card
 import com.gameservice.models.GameState
@@ -23,6 +24,8 @@ suspend fun playProperty(room: DealGame, game: MutableStateFlow<GameState>, play
         val propertySetId = playerState.addProperty(card, playProperty.color)
         room.sendBroadcast(PlacePropertyMessage(playerId, card, propertySetId!!))
         val cardsLeft = current.cardsLeftToPlay - 1
-        return@updateAndGet current.copy(cardsLeftToPlay = cardsLeft)
+        var winner: String? = null
+        if (playerState.numCompleteSets() == NUM_COMPLETE_SETS_TO_WIN) winner = playerId
+        return@updateAndGet current.copy(winningPlayer = winner, cardsLeftToPlay = cardsLeft)
     }
 }

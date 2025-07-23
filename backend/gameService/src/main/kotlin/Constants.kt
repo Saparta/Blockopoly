@@ -6,6 +6,7 @@ import com.gameservice.models.Color
 import com.gameservice.models.createCardMapping
 
 const val ROOM_START_CHANNEL = "START"
+const val NUM_COMPLETE_SETS_TO_WIN = 3
 const val ROOM_BROADCAST_MSG_DELIMITER = ":"
 val cardMapping = createCardMapping()
 val deck = cardMapping.values

@@ -4,6 +4,7 @@ import com.gameservice.handlers.applyAction
 import com.gameservice.models.Command
 import com.gameservice.models.DrawMessage
 import com.gameservice.models.GameState
+import com.gameservice.models.RestartGame
 import com.gameservice.models.SocketMessage
 import com.gameservice.models.StartTurn
 import com.gameservice.models.StateMessage
@@ -25,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap
 // Manages 1 game room
 class DealGame(val roomId: String, val players: List<String>) {
     val state = CompletableDeferred<MutableStateFlow<GameState>>()
+    private val host = players.first()
     private val commandChannel = Channel<Command>(capacity = Channel.UNLIMITED)
     private val broadcastChannel = Channel<SocketMessage>(capacity = Channel.UNLIMITED)
     private val playerSockets = ConcurrentHashMap<String, WebSocketSession>()
@@ -37,8 +39,12 @@ class DealGame(val roomId: String, val players: List<String>) {
         // Don't need highly concurrent access to GameState and prevents Concurrent Modifications Errors
         gameScope.launch {
             for (command in commandChannel) {
-                val newState = applyAction(this@DealGame, state.await(), command.playerId, command.command )
-                state.await().tryEmit(newState)
+                if (state.await().value.winningPlayer == null && command.command !is RestartGame) {
+                    val newState = applyAction(this@DealGame, state.await(), command.playerId, command.command )
+                    state.await().tryEmit(newState)
+                } else if (state.await().value.winningPlayer != null && command.command is RestartGame) {
+                    restartGame()
+                }
             }
         }
 
@@ -110,5 +116,9 @@ class DealGame(val roomId: String, val players: List<String>) {
 
         }
          return state
+    }
+
+    suspend fun restartGame() {
+        state.await().tryEmit(GameState(players))
     }
 }

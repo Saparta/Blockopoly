@@ -108,6 +108,12 @@ class PropertyCollection {
         set.getCardIds().forEach { propertyToSetId[it] = set.propertySetId }
         set.getDevelopmentIds().forEach { developmentsToSetId[it] = set.propertySetId }
     }
+
+    fun numCompleteSets() : Int {
+        return collection.values.fold(0) { acc, set ->
+            acc + if (set.isComplete) 1 else 0
+        }
+    }
 }
 
 @Serializable
