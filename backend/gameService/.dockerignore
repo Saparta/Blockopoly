@@ -1,7 +1,9 @@
 **/build
 .gradle
 .idea
+.venv
 *.iml
 .git
+src/test
 Dockerfile
 .dockerignore

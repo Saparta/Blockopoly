@@ -10,6 +10,7 @@ sealed interface SocketMessage {
     fun toJson() = Json.encodeToString(serializer(),this)
 }
 
+@Serializable
 sealed interface MultiStepInitiator : SocketMessage {
     val requester: String
 }

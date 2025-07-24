@@ -116,10 +116,10 @@ fun Application.configureGameGui() {
                                                 ul(classes = "list-disc list-inside text-sm text-gray-700") {
                                                     playerState.hand.forEach { card ->
                                                         when (card) {
-                                                            is Card.Rent -> li { +"${card.actionType} (Value: ${card.value}, ID: ${card.id}, Colors: ${card.colors}) )"}
-                                                            is Card.Action -> li { +"${card.actionType} (Value: ${card.value}, ID: ${card.id}) )"}
-                                                            is Card.Money -> li { +"${card.cardType} (Value: ${card.value}, ID: ${card.id})" }
-                                                            is Card.Property -> li { +"${card.cardType} (Value: ${card.value}, ID: ${card.id}, Colors: ${card.colors}) )"}
+                                                            is Card.Rent -> li { +"${card.actionType} (ID: ${card.id}, Value: ${card.value}, Colors: ${card.colors})"}
+                                                            is Card.Action -> li { +"${card.actionType} (ID: ${card.id}, Value: ${card.value})"}
+                                                            is Card.Money -> li { +"${card.cardType} (ID: ${card.id}, Value: ${card.value})" }
+                                                            is Card.Property -> li { +"${card.cardType} (ID: ${card.id}, Value: ${card.value}, Colors: ${card.colors})"}
                                                         }
                                                     }
                                                 }
@@ -132,7 +132,7 @@ fun Application.configureGameGui() {
                                             } else {
                                                 ul(classes = "list-disc list-inside text-sm text-gray-700") {
                                                     playerState.bank.forEach { card ->
-                                                        li { +"${card.cardType} (Value: ${card.value ?: "N/A"})" }
+                                                        li { +"${card.cardType} (ID: ${card.id}, Value: ${card.value ?: "N/A"})" }
                                                     }
                                                 }
                                             }
