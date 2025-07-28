@@ -69,18 +69,22 @@ const Playmat2: React.FC = () => {
         </div>
 
         {/* -------------------- Draw / discard piles ------------------- */}
-        <div className="draw-pile">
-          <div className="deck">
-            <img className="deck-top" src={drawPileImg} alt="Deck" />
+        <div className="center-pile">
+          <div className="draw-pile">
+            <div className="deck">
+              <img className="deck-top" src={drawPileImg} alt="Deck" />
+            </div>
+          </div>
+
+          <div className="discard-pile">
+            <img className="card-1" src={discard1} alt="" aria-hidden />
+            <img className="card-2" src={discard2} alt="" aria-hidden />
+            <img className="card-3" src={discard3} alt="" aria-hidden />
           </div>
         </div>
-
-        <div className="discard-pile">
-          <img className="card-1" src={discard1} alt="" aria-hidden />
-          <img className="card-2" src={discard2} alt="" aria-hidden />
-          <img className="card-3" src={discard3} alt="" aria-hidden />
-        </div>
       </div>
+
+      {/* -------------------- Player 2 board ------------------------- */}
 
       {/* -------------------- Player 1 board ------------------------- */}
 

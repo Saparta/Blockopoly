@@ -12,7 +12,7 @@ import {
 } from "../constants/constants.ts";
 
 const API = import.meta.env.room_service ?? "http://localhost:8080";
-const GAME_API = import.meta.env.VITE_GAME_BASE ?? "http://localhost:8081";
+// const GAME_API = import.meta.env.VITE_GAME_BASE ?? "http://localhost:8081";
 
 const buildSSEURL = (
   room: string,
@@ -154,7 +154,7 @@ const Lobby: React.FC = () => {
 
   const startGame = async () => {
     try {
-      const res = await fetch(`${GAME_API}/start/${roomId}`, {
+      const res = await fetch(`${API}/start/${roomId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hostId: myPID }), // send anything your API needs

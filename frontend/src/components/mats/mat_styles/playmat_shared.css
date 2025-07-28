@@ -4,6 +4,23 @@
   box-sizing: border-box;
 }
 
+[class^="playing-mat-outline-"] {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  background: #fff9e5;
+  overflow: clip;
+}
+
+[class^="playing-mat-outline-"] > .mat-stage {
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+}
+/* 
 .playing-mat-outline-2-players {
   position: fixed;
   inset: 0;
@@ -37,7 +54,18 @@
   align-items: center;
   justify-content: center;
   background: #e5e5e5;
+} */
+
+.center-pile {
+  width: 10.3125rem;
+  height: 15.401875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  aspect-ratio: 165 / 246.43;
 }
+
 .draw-pile {
   width: 10.3125rem;
   height: 15.401875rem;
@@ -59,7 +87,7 @@
   height: 15.21375rem;
   position: absolute;
   right: 41.84%;
-  left: 50.71%;
+  left: 53%;
   top: 25.876875rem;
   aspect-ratio: 142.88 / 213.08;
 }
