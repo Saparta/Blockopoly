@@ -13,8 +13,8 @@
 }
 
 [class^="playing-mat-outline-"] > .mat-stage {
-  max-width: 90vw;
-  max-height: 90vh;
+  max-width: 80vw;
+  max-height: 80vh;
   width: 100%;
   height: auto;
   aspect-ratio: 4 / 3;

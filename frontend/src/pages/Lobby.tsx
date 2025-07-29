@@ -1,4 +1,4 @@
-/* src/pages/Lobby.tsx  */
+/* src/pages/Lobby.tsx */
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import FallingBricks from "../components/FallingBricks";
@@ -12,7 +12,6 @@ import {
 } from "../constants/constants.ts";
 
 const API = import.meta.env.room_service ?? "http://localhost:8080";
-// const GAME_API = import.meta.env.VITE_GAME_BASE ?? "http://localhost:8081";
 
 const buildSSEURL = (
   room: string,
@@ -42,16 +41,11 @@ const Lobby: React.FC = () => {
   const [hostID, setHostID] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
-  // Use useCallback to memoize upsert, though not strictly necessary here,
-  // it's a good pattern for functions passed to child components or effects.
   const upsert = useCallback((list: Player[], p: Player): Player[] => {
     const i = list.findIndex((x) => x.playerId === p.playerId);
     if (i === -1) {
-      // Player not found, add them
       return [...list, p];
     } else {
-      // Player found, update their info (e.g., name might change)
-      // This is crucial for preventing true duplicates and updating existing entries.
       return [...list.slice(0, i), p, ...list.slice(i + 1)];
     }
   }, []);
@@ -72,7 +66,7 @@ const Lobby: React.FC = () => {
     const url = buildSSEURL(roomCode, myName, myPID);
     console.log(`Lobby: Attempting to establish new SSE connection to: ${url}`);
 
-    esRef.current = new EventSource(url); // Store the new EventSource instance
+    esRef.current = new EventSource(url);
 
     const handleJoin = (ev: MessageEvent) => {
       try {
@@ -83,7 +77,6 @@ const Lobby: React.FC = () => {
         }
         const name = nameParts.join(":") || "Player";
         console.log(`[SSE JOIN] Player joined: ${name} (${pid})`);
-        // Use upsert to prevent true duplicates if event fires multiple times
         setPlayers((cur) => upsert(cur, { playerId: pid, name }));
       } catch (e) {
         console.error("[SSE JOIN parse error]", e);
@@ -97,7 +90,6 @@ const Lobby: React.FC = () => {
         return;
       }
       console.log(`[SSE LEAVE] Player left: (${pid})`);
-      // Filter is naturally idempotent (removing a non-existent player does nothing)
       setPlayers((cur) => cur.filter((p) => p.playerId !== pid));
     };
 
@@ -116,32 +108,39 @@ const Lobby: React.FC = () => {
       }
     };
 
+    const handleGameStart = () => {
+      console.log("[SSE START] Game is starting! Navigating...");
+      if (!roomCode) {
+        console.error("[SSE START] No room code available for navigation.");
+        return;
+      }
+      navigate(`/play/${roomCode}`);
+    };
+    // ------------------------------------
+
     esRef.current.addEventListener("JOIN", handleJoin);
     esRef.current.addEventListener("LEAVE", handleLeave);
     esRef.current.addEventListener("HOST", handleHost);
+    esRef.current.addEventListener("START", handleGameStart);
+    // --------------------------------------
 
     esRef.current.onerror = (error) => {
       console.error("[Lobby] SSE error:", error);
-      // Immediately close and clear the ref on error to prevent re-use of a broken connection
       if (esRef.current) {
         esRef.current.close();
         esRef.current = null;
       }
-      // Consider a retry mechanism or error display here
     };
 
-    // Cleanup function for useEffect
     return () => {
       console.log(
         "Lobby: Cleaning up SSE connection on unmount or effect re-run."
       );
-      // This is the primary place to ensure the EventSource is closed.
       if (esRef.current) {
         esRef.current.close();
         esRef.current = null;
       }
     };
-    // Add `upsert` to dependencies of main useEffect as it's a callback function
   }, [roomCode, myName, navigate, upsert, myPID]);
 
   const leaveRoom = () => {
@@ -157,14 +156,13 @@ const Lobby: React.FC = () => {
       const res = await fetch(`${API}/start/${roomId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hostId: myPID }), // send anything your API needs
+        body: JSON.stringify({ hostId: myPID }),
       });
 
       if (!res.ok) {
         throw new Error(await res.text());
       }
 
-      // 🛫 ship ’em to the play view
       navigate(`/play/${roomCode}`);
     } catch (err) {
       console.error("[startGame] Couldn’t start:", err);

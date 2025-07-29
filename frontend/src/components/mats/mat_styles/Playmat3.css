@@ -1,4 +1,4 @@
-.playing-mat-3-players,
+/* .playing-mat-3-players,
 .playing-mat-3-players * {
   box-sizing: border-box;
 }
@@ -6,8 +6,16 @@
   background: transparent;
   height: 67.5rem;
   position: relative;
-}
+} */
 
+.playing-mat-outline-3-players {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e5e5e5;
+}
 .backdrop {
   position: absolute;
   inset: 0;
