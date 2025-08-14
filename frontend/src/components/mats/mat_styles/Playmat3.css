@@ -16,19 +16,12 @@
   justify-content: center;
   background: #e5e5e5;
 }
-.backdrop {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: -1;
-}
+
 .player-1-space {
   width: 58.5625rem;
   height: 20.4375rem;
   position: absolute;
-  left: 30.6875rem;
+  left: 40.6875rem;
   top: 47.0625rem;
 }
 .money-collection-bank {
@@ -75,34 +68,12 @@
   bottom: 2.14%;
   top: 0%;
 }
-.property-collection2 {
-  color: #000000;
-  text-align: center;
-  font-family: "Inter-Regular", sans-serif;
-  font-size: 1.5350877046585083rem;
-  font-weight: 400;
-  position: absolute;
-  left: 35.3125rem;
-  top: 5.5625rem;
-  width: 9.1875rem;
-  height: 5.5625rem;
-  -webkit-text-stroke: 0.051169589161872864rem #000000;
-}
-.text {
-  color: #000000;
-  text-align: center;
-  font-family: "Inter-Regular", sans-serif;
-  font-size: 1.5350877046585083rem;
-  font-weight: 400;
-  position: absolute;
-  left: 74.349375rem;
-  top: 0rem;
-}
+
 .player-2-space {
   width: 59.125rem;
   height: 20.4375rem;
   position: absolute;
-  left: 99.5625rem;
+  left: 115rem;
   top: 63rem;
   transform-origin: 0 0;
   transform: rotate(-90deg) scale(1, 1);
@@ -130,38 +101,13 @@
   left: 20.468125rem;
   top: 0rem;
 }
-.property-collection4 {
-  color: #000000;
-  text-align: center;
-  font-family: "Inter-Regular", sans-serif;
-  font-size: 1.5350877046585083rem;
-  font-weight: 400;
-  position: absolute;
-  left: 35.1875rem;
-  top: 6.875rem;
-  width: 8.5rem;
-  height: 5.5625rem;
-  -webkit-text-stroke: 0.051169589161872864rem #000000;
-}
+
 .player-3-space {
   width: 59.5625rem;
   height: 20.4375rem;
   position: absolute;
-  left: 20.4375rem;
+  left: 22.4375rem;
   top: 5.5rem;
   transform-origin: 0 0;
   transform: rotate(90deg) scale(1, 1);
-}
-.property-collection5 {
-  color: #000000;
-  text-align: center;
-  font-family: "Inter-Regular", sans-serif;
-  font-size: 1.5350877046585083rem;
-  font-weight: 400;
-  position: absolute;
-  left: 35.25rem;
-  top: 5rem;
-  width: 8.625rem;
-  height: 5.5625rem;
-  -webkit-text-stroke: 0.051169589161872864rem #000000;
 }

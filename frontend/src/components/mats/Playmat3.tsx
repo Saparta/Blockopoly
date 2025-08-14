@@ -57,8 +57,6 @@ const Playmat3: React.FC = () => {
           )}
         </div>
         <div className="property-collection" id="p1-properties" />
-        <div className="property-collection2"></div>
-        <div className="text" />
       </div>
 
       {/* ── PLAYER 2 ─────────────────────────────────────────────── */}
@@ -72,8 +70,6 @@ const Playmat3: React.FC = () => {
           )}
         </div>
         <div className="property-collection3" id="p2-properties" />
-        <div className="property-collection4"></div>
-        <div className="text" />
       </div>
 
       {/* ── PLAYER 3 ─────────────────────────────────────────────── */}
@@ -87,8 +83,6 @@ const Playmat3: React.FC = () => {
           )}
         </div>
         <div className="property-collection3" />
-        <div className="property-collection5"></div>
-        <div className="text" />
       </div>
 
       {/* ── HAND MODAL ───────────────────────────────────────────── */}
