@@ -3,8 +3,10 @@ val logback_version: String by project
 
 plugins {
     kotlin("jvm") version "2.1.10"
-    id("io.ktor.plugin") version "3.1.3"
+    id("io.ktor.plugin") version "3.2.0"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10"
+    // Use the GradleUp Shadow plugin, not the old coordinates:
+    id("com.gradleup.shadow") version "8.3.6"
 }
 
 kotlin {

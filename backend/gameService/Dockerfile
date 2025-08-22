@@ -1,36 +1,29 @@
-# syntax=docker/dockerfile:1
-
-############################
-# ---- 1. Build stage ---- #
-############################
-FROM gradle:8.7-jdk21 AS builder
-WORKDIR /home/ktor
-
-# ----- copy build scripts first (enables layer-caching of dependencies) -----
-COPY gradlew gradlew.bat gradle/ ./
-COPY settings.gradle.kts build.gradle.kts ./
-
-RUN ./gradlew --no-daemon dependencies || true
-
-# ----- now copy the rest of the source and build -----
-COPY . .
-RUN ./gradlew --no-daemon shadowJar                 # produces build/libs/<name>-all.jar
-
-
-#############################
-# ---- 2. Runtime stage --- #
-#############################
-FROM eclipse-temurin:21-jre-alpine
+# ---- Builder ----
+FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /app
 
-# Grab the shaded JAR from the previous stage
-COPY --from=builder /home/ktor/build/libs/*-all.jar app.jar
+# Copy wrapper + gradle first (for caching)
+COPY gradlew gradlew
+COPY gradle gradle
+COPY settings.gradle.kts build.gradle.kts ./
 
-# Run as an unprivileged user (optional but recommended)
-RUN addgroup -S ktor && adduser -S ktor -G ktor
-USER ktor
+# Normalize + make executable (first pass)
+RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
 
-EXPOSE 8080
-ENV JAVA_OPTS="-Xms128m -Xmx256m"
-ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar app.jar"]
+# Optional: warm Gradle cache
+RUN --mount=type=cache,target=/root/.gradle ./gradlew --no-daemon dependencies || true
 
+# Copy the rest of the source (this may overwrite gradlew)
+COPY . .
+
+RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
+
+# Build fat jar (fail fast)
+RUN --mount=type=cache,target=/root/.gradle ./gradlew --no-daemon clean shadowJar
+RUN ls -la build/libs
+
+# ---- Runtime ----
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/build/libs/*-all.jar /app/app.jar
+ENTRYPOINT ["java","-jar","/app/app.jar"]
