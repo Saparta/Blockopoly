@@ -77,3 +77,38 @@ body,
   transform: translateY(-8px) scale(1.02);
   box-shadow: 0 12px 22px rgba(0, 0, 0, 0.45);
 }
+
+/* in PlayScreen.css */
+.ws-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+  margin-left: 8px;
+}
+.ws-dot.on {
+  background: #29c263;
+}
+.ws-dot.off {
+  background: #c22929;
+}
+
+.play-actions {
+  position: absolute;
+  bottom: 180px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+}
+.endturn-btn {
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+.endturn-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
