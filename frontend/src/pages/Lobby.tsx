@@ -11,16 +11,17 @@ import {
   ROOM_ID_KEY,
 } from "../constants/constants.ts";
 
-const API = import.meta.env.room_service ?? "http://localhost:8080";
+// Use Vite-style env var; fallback for local dev
+const API = import.meta.env.VITE_ROOM_SERVICE ?? "http://localhost:8080";
 
 const buildSSEURL = (
   room: string,
   name: string,
   playerId: string | null = null
 ): string => {
-  return `${API}/joinRoom/${room}/${encodeURIComponent(name)}${
-    playerId !== null ? `?playerId=${playerId}` : ""
-  }`;
+  return `${API}/joinRoom/${encodeURIComponent(room)}/${encodeURIComponent(
+    name
+  )}${playerId !== null ? `?playerId=${encodeURIComponent(playerId)}` : ""}`;
 };
 
 const Lobby: React.FC = () => {
@@ -29,25 +30,21 @@ const Lobby: React.FC = () => {
 
   const myName = sessionStorage.getItem(NAME_KEY) || "";
   const [myPID] = useState<string>(sessionStorage.getItem(PLAYER_ID_KEY) || "");
-
   const roomId = sessionStorage.getItem(ROOM_ID_KEY) ?? "";
 
-  console.log(
-    `Players List: ${JSON.stringify(sessionStorage.getItem(PLAYERS_KEY))}`
-  );
   const [players, setPlayers] = useState<Player[]>(
-    JSON.parse(sessionStorage.getItem(PLAYERS_KEY)!)
+    JSON.parse(sessionStorage.getItem(PLAYERS_KEY) || "[]")
   );
   const [hostID, setHostID] = useState<string | null>(null);
+
   const esRef = useRef<EventSource | null>(null);
 
   const upsert = useCallback((list: Player[], p: Player): Player[] => {
     const i = list.findIndex((x) => x.playerId === p.playerId);
-    if (i === -1) {
-      return [...list, p];
-    } else {
-      return [...list.slice(0, i), p, ...list.slice(i + 1)];
-    }
+    if (i === -1) return [...list, p];
+    const next = [...list];
+    next[i] = p;
+    return next;
   }, []);
 
   useEffect(() => {
@@ -66,7 +63,8 @@ const Lobby: React.FC = () => {
     const url = buildSSEURL(roomCode, myName, myPID);
     console.log(`Lobby: Attempting to establish new SSE connection to: ${url}`);
 
-    esRef.current = new EventSource(url);
+    const es = new EventSource(url);
+    esRef.current = es;
 
     const handleJoin = (ev: MessageEvent) => {
       try {
@@ -96,15 +94,11 @@ const Lobby: React.FC = () => {
     const handleHost = (ev: MessageEvent) => {
       const [newHostID] = ev.data.split(":");
       const trimmedHostID = newHostID ? newHostID.trim() : "";
-
       if (trimmedHostID) {
         console.log(`[SSE HOST] New host ID: ${trimmedHostID}`);
         setHostID(trimmedHostID);
       } else {
-        console.warn(
-          "[SSE HOST] Received empty or malformed host ID from SSE event. Data:",
-          ev.data
-        );
+        console.warn("[SSE HOST] Malformed host ID:", ev.data);
       }
     };
 
@@ -116,30 +110,27 @@ const Lobby: React.FC = () => {
       }
       navigate(`/play/${roomCode}`);
     };
-    // ------------------------------------
 
-    esRef.current.addEventListener("JOIN", handleJoin);
-    esRef.current.addEventListener("LEAVE", handleLeave);
-    esRef.current.addEventListener("HOST", handleHost);
-    esRef.current.addEventListener("START", handleGameStart);
-    // --------------------------------------
+    es.addEventListener("JOIN", handleJoin);
+    es.addEventListener("LEAVE", handleLeave);
+    es.addEventListener("HOST", handleHost);
+    es.addEventListener("START", handleGameStart);
 
-    esRef.current.onerror = (error) => {
-      console.error("[Lobby] SSE error:", error);
-      if (esRef.current) {
-        esRef.current.close();
-        esRef.current = null;
-      }
+    es.onopen = () => {
+      console.log("[Lobby] SSE open. readyState=", es.readyState);
+    };
+
+    es.onerror = (error) => {
+      // IMPORTANT: don't close here — let EventSource auto-retry
+      console.error("[Lobby] SSE error (auto-retry will continue):", error);
     };
 
     return () => {
       console.log(
         "Lobby: Cleaning up SSE connection on unmount or effect re-run."
       );
-      if (esRef.current) {
-        esRef.current.close();
-        esRef.current = null;
-      }
+      esRef.current?.close();
+      esRef.current = null;
     };
   }, [roomCode, myName, navigate, upsert, myPID]);
 
@@ -159,11 +150,11 @@ const Lobby: React.FC = () => {
         body: JSON.stringify({ hostId: myPID }),
       });
 
-      if (!res.ok) {
-        throw new Error(await res.text());
-      }
+      if (!res.ok) throw new Error(await res.text());
 
-      navigate(`/play/${roomCode}`);
+      // Optional: rely on SSE START for synced navigation
+      // navigate(`/play/${roomCode}`);
+      console.log("[startGame] Start request sent. Waiting for SSE START…");
     } catch (err) {
       console.error("[startGame] Couldn’t start:", err);
       alert("Could not start the game – check the server log.");

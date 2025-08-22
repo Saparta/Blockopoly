@@ -3,10 +3,11 @@ html,
 body,
 #root {
   height: 100%;
+  width: 100%;
 }
 .board-shell {
-  width: 100vw;
-  height: 100vh; /* full viewport */
+  width: 80vw;
+  height: 80vh; /* full viewport */
   overflow: hidden; /* no scrollbars */
 }
 .board-svg {
@@ -14,4 +15,100 @@ body,
   height: 100%;
   object-fit: contain; /* <─ keep whole board visible */
   object-position: center;
+}
+
+.play-topbar {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  z-index: 10;
+  display: flex;
+  gap: 16px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 10px;
+  font-size: 14px;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+}
+
+.hand-overlay {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  z-index: 8;
+}
+
+.hand-card {
+  width: 112px;
+  height: 160px;
+  border-radius: 10px;
+  background: #20242a;
+  display: grid;
+  place-items: center;
+  transform: translateY(40px) scale(0.92);
+  opacity: 0;
+  transition: transform 280ms ease, opacity 280ms ease, box-shadow 200ms ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.hand-overlay .hand-card {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.hand-card img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.hand-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.45);
+}
+
+/* in PlayScreen.css */
+.ws-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+  margin-left: 8px;
+}
+.ws-dot.on {
+  background: #29c263;
+}
+.ws-dot.off {
+  background: #c22929;
+}
+
+.play-actions {
+  position: absolute;
+  bottom: 180px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+}
+.endturn-btn {
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+.endturn-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

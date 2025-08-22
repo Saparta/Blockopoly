@@ -5,11 +5,19 @@
 }
 
 [class^="playing-mat-outline-"] {
-  position: fixed;
+  position: static;
   display: flex;
   align-items: center;
   background: #fff9e5;
   overflow: clip;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 [class^="playing-mat-outline-"] > .mat-stage {
