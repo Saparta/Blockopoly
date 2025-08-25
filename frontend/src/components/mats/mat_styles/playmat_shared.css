@@ -178,3 +178,13 @@
   border-radius: 0.25rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
+
+.droppable {
+  transition: outline-color 120ms ease, background 120ms ease,
+    transform 120ms ease;
+}
+.droppable.is-over {
+  outline: 2px dashed rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.06);
+  transform: scale(1.02);
+}

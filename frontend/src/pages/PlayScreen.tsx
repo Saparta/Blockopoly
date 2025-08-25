@@ -1,4 +1,19 @@
-/* src/pages/PlayScreen.tsx -------------------------------------------- */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* src/pages/PlayScreen.tsx --------------------------------------------------
+   Final, scalable Play Screen using dnd-kit + flat GameAction messages.
+   - Sends ONLY the polymorphic GameAction JSON over WS (no envelope).
+     Examples the server expects:
+       {"type":"EndTurn"}
+       {"type":"PlayMoney","id":42}
+       {"type":"PlayProperty","id":13,"color":"Blue"}
+   - Works 2–5 players. Playmats must expose droppables with ids:
+       bank:pid:<playerId>     collect:pid:<playerId>     discard
+   - A player can drop ONLY into their own bank/collection zones.
+   - Drag plays are limited to MONEY→Bank and PROPERTY→Collection.
+   - Client guard for max 3 plays/turn (uses server cardsLeftToPlay minus local sends).
+   - End Turn button is enabled whenever it's your turn (you may end early).
+---------------------------------------------------------------------------- */
+
 import React, {
   lazy,
   useCallback,
@@ -15,186 +30,190 @@ import {
   NAME_KEY,
 } from "../constants/constants";
 import "../style/PlayScreen.css";
+
+import {
+  DndContext,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  closestCenter,
+  type DragEndEvent,
+  useDraggable,
+  DragOverlay,
+} from "@dnd-kit/core";
+
 import { cardAssetMap } from "../utils/cardmapping";
-
-/* ---------- Shared DnD mime ---------- */
-export const CARD_MIME = "application/x-blockopoly-card";
-
-/* URL-based import so no svg.d.ts is required */
 const cardBack = new URL("../assets/cards/card-back.svg", import.meta.url).href;
 
-/* mats */
-const Playmat2 = lazy(() => import("../components/mats/Playmat2"));
-const Playmat3 = lazy(() => import("../components/mats/Playmat3"));
-const Playmat4 = lazy(() => import("../components/mats/Playmat4"));
-const Playmat5 = lazy(() => import("../components/mats/Playmat5"));
-
-/* ---------- Server-aligned types (subset we use) ---------- */
-export type ServerCardType =
-  | "GENERAL_ACTION"
-  | "RENT_ACTION"
-  | "PROPERTY"
-  | "MONEY";
-export type ServerCard = {
-  id: number; // 999 when hidden
-  type: ServerCardType;
-  value?: number | null; // value may be null for rainbow wilds on backend side
-  actionType?: string; // e.g., PASS_GO, SLY_DEAL...
-  colors?: string[]; // color names from backend enum
+/** Mat components for 2–5 players (must render droppables with the ids detailed above) */
+// Tell TS what props mats accept so <Mat .../> type-checks
+export type PlaymatProps = {
+  layout: Partial<Record<"p1" | "p2" | "p3" | "p4" | "p5", string>>; // seat -> playerId
+  myPID: string;
+  names: Record<string, string>;
+  discardImages?: string[];
 };
+const Playmat2 = lazy(
+  () => import("../components/mats/Playmat2")
+) as React.LazyExoticComponent<React.ComponentType<PlaymatProps>>;
+const Playmat3 = lazy(
+  () => import("../components/mats/Playmat3")
+) as React.LazyExoticComponent<React.ComponentType<PlaymatProps>>;
+const Playmat4 = lazy(
+  () => import("../components/mats/Playmat4")
+) as React.LazyExoticComponent<React.ComponentType<PlaymatProps>>;
+const Playmat5 = lazy(
+  () => import("../components/mats/Playmat5")
+) as React.LazyExoticComponent<React.ComponentType<PlaymatProps>>;
+
+/** Server-aligned types (minimal) */
+type ServerCardType = "GENERAL_ACTION" | "RENT_ACTION" | "PROPERTY" | "MONEY";
+type ServerCard = {
+  id: number;
+  type: ServerCardType;
+  value?: number;
+  actionType?: string;
+  colors?: string[];
+};
+
 type ServerPlayerState = {
   hand: ServerCard[];
-  propertyCollection: Record<string, unknown>; // placeholder; server owns truth
+  propertyCollection: Record<string, ServerCard[]>;
   bank: ServerCard[];
 };
+
 type ServerGameState = {
   playerAtTurn: string | null;
   winningPlayer: string | null;
-  cardsLeftToPlay: number;
-  playerOrder: string[];
+  cardsLeftToPlay: number; // server is source of truth
+  playerOrder: string[]; // playerIds in seat order
   drawPileSize: number;
   pendingInteractions: Record<string, unknown>;
   playerState: Record<string, ServerPlayerState>;
   discardPile: ServerCard[];
 };
+
 type StateEnvelope =
   | { type: "STATE"; gameState: ServerGameState }
   | { type: "START_TURN"; playerId: string }
   | { type: "DRAW"; playerId: string; cards: ServerCard[] }
   | Record<string, unknown>;
 
-/* ---------- Client→Server actions (match Kotlin @SerialName) ---------- */
+/** Actions (flat polymorphic) */
 type Color = string;
 type Action =
   | { type: "EndTurn" }
   | { type: "PlayMoney"; id: number }
-  | { type: "PlayProperty"; id: number; color: Color }
-  | { type: "PassGo"; id: number };
+  | { type: "PlayProperty"; id: number; color: Color };
+// | { type: "Discard"; id: number }
 
-/* ---------- Config ---------- */
-const GAME_API = import.meta.env.game_service ?? "http://localhost:8081";
+/** Config */
+const GAME_API = import.meta.env.VITE_GAME_SERVICE ?? "http://localhost:8081";
 const toWs = (base: string) =>
   base
-    .replace(/^http(s?):\/\//, (_, s) => (s ? "wss://" : "ws://"))
+    .replace(/^http(s?):\/\//, (_: string, s: string) =>
+      s ? "wss://" : "ws://"
+    )
     .replace(/\/+$/, "");
-
-/* ---------- Helpers ---------- */
 const assetForCard = (c: ServerCard) =>
   !c || c.id === 999 ? cardBack : cardAssetMap[c.id] ?? cardBack;
-const boardFor = (count: number) => {
-  switch (count) {
-    case 2:
-      return Playmat2;
-    case 3:
-      return Playmat3;
-    case 4:
-      return Playmat4;
-    default:
-      return Playmat5;
-  }
+
+/** Draggable hand card */
+const DraggableCard: React.FC<{
+  card: ServerCard;
+  canDrag: boolean;
+  onClick: () => void;
+}> = ({ card, canDrag, onClick }) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `card-${card.id}`,
+    data: { card },
+    disabled: !canDrag,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`hand-card ${canDrag ? "draggable" : ""} ${
+        isDragging ? "dragging" : ""
+      }`}
+      onClick={onClick}
+      title={`${card.type}${card.actionType ? `: ${card.actionType}` : ""}`}
+    >
+      <img src={assetForCard(card)} alt={card.type} draggable={false} />
+    </div>
+  );
 };
 
-/* ---------- Type guards (no `any`) ---------- */
-function isObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null;
-}
-function isStateEnvelope(
-  m: unknown
-): m is { type: "STATE"; gameState: ServerGameState } {
-  return isObject(m) && m.type === "STATE" && "gameState" in m;
-}
-function isStartTurn(
-  m: unknown
-): m is { type: "START_TURN"; playerId: string } {
-  return (
-    isObject(m) && m.type === "START_TURN" && typeof m.playerId === "string"
-  );
-}
-function isDraw(
-  m: unknown
-): m is { type: "DRAW"; playerId: string; cards: ServerCard[] } {
-  return (
-    isObject(m) &&
-    m.type === "DRAW" &&
-    typeof m.playerId === "string" &&
-    Array.isArray(m.cards)
-  );
-}
-function isRawState(m: unknown): m is ServerGameState {
-  return (
-    isObject(m) &&
-    "playerAtTurn" in m &&
-    "playerState" in m &&
-    "drawPileSize" in m
-  );
-}
-
-/* ---------- Lobby players (for names) ---------- */
+/** Component */
 type LobbyPlayer = { id: string; name?: string | null };
 
 const PlayScreen: React.FC = () => {
-  const { roomCode = "" } = useParams(); // pretty code (display only)
+  const { roomCode = "" } = useParams();
   const navigate = useNavigate();
 
-  const myName = sessionStorage.getItem(NAME_KEY) || "";
+  const myName = (sessionStorage.getItem(NAME_KEY) || "").trim();
   const myPID = sessionStorage.getItem(PLAYER_ID_KEY) || "";
-  const roomId = sessionStorage.getItem(ROOM_ID_KEY) || ""; // REAL backend ID
+  const roomId = sessionStorage.getItem(ROOM_ID_KEY) || "";
 
-  /* name map */
+  // Friendly names (no blanks)
   const playersRaw = sessionStorage.getItem(PLAYERS_KEY) ?? "[]";
-  const players = useMemo(
+  const lobbyPlayers = useMemo(
     () => (JSON.parse(playersRaw) as LobbyPlayer[]).filter(Boolean),
     [playersRaw]
   );
   const nameById = useMemo(() => {
     const m: Record<string, string> = {};
-    for (const p of players) {
-      if (p?.id && p.name && p.name.trim()) {
-        m[p.id] = p.name.trim();
-      }
-    }
-    if (myPID && myName && myName.trim()) {
-      m[myPID] = myName.trim();
-    }
+    for (const p of lobbyPlayers)
+      if (p?.id && p.name && p.name.trim()) m[p.id] = p.name.trim();
+    if (myPID && myName) m[myPID] = myName;
     return m;
-  }, [players, myPID, myName]);
+  }, [lobbyPlayers, myPID, myName]);
 
-  /* UI state */
+  const displayName = useCallback(
+    (pid?: string | null) => {
+      if (!pid) return "-";
+      if (pid === myPID) return myName || "You";
+      const n = nameById[pid];
+      return n && n.trim() ? n : "Opponent";
+    },
+    [nameById, myPID, myName]
+  );
+
+  /** Local state */
   const [game, setGame] = useState<ServerGameState | null>(null);
   const [myHand, setMyHand] = useState<ServerCard[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
   const [wsReady, setWsReady] = useState(false);
-
-  /* choose color modal when dropping multicolor props */
-  const [pendingPropDrop, setPendingPropDrop] = useState<{
-    card: ServerCard;
-  } | null>(null);
-
-  /* layout (p1/p2) derived from order once known */
-  const [layout, setLayout] = useState<{ p1: string; p2: string } | null>(null);
+  const [menuCard, setMenuCard] = useState<ServerCard | null>(null);
+  const [colorChoices, setColorChoices] = useState<string[] | null>(null);
+  const [spentThisTurn, setSpentThisTurn] = useState(0);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const backoffRef = useRef(500);
 
-  const wsUrl = useMemo(() => {
-    const base = toWs(GAME_API);
-    return `${base}/ws/play/${encodeURIComponent(roomId)}/${encodeURIComponent(
-      myPID
-    )}`;
-  }, [roomId, myPID]);
-
-  /* send helper */
-  const wsSend = useCallback(
-    (action: Action) => {
-      const ws = wsRef.current;
-      if (!ws || ws.readyState !== WebSocket.OPEN) return;
-      ws.send(JSON.stringify({ playerId: myPID, command: action }));
-    },
-    [myPID]
+  const wsUrl = useMemo(
+    () =>
+      `${toWs(GAME_API)}/ws/play/${encodeURIComponent(
+        roomId
+      )}/${encodeURIComponent(myPID)}`,
+    [roomId, myPID]
   );
 
-  /* hand animation */
+  /** WS send helper — flat action */
+  const wsSend = useCallback((action: Action) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify(action));
+  }, []);
+
+  /** Sensors */
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  );
+
+  /** Animations */
   const animateToNewHand = useCallback((newHand: ServerCard[]) => {
     setIsAnimating(true);
     setMyHand((prev) => {
@@ -209,32 +228,26 @@ const PlayScreen: React.FC = () => {
         setTimeout(() => {
           curr = [...curr, card];
           setMyHand(curr);
-          if (i === added.length - 1) {
+          if (i === added.length - 1)
             setTimeout(() => {
               setMyHand(newHand);
               setIsAnimating(false);
             }, 120);
-          }
         }, i * 200);
       });
       return prev;
     });
   }, []);
 
-  /* END TURN */
-  const sendEndTurn = useCallback(() => wsSend({ type: "EndTurn" }), [wsSend]);
-
-  /* message handlers */
+  /** Snapshot handling */
   const handleStateSnapshot = useCallback(
     (snapshot: ServerGameState) => {
       setGame(snapshot);
-      if (!layout && snapshot.playerOrder?.length >= 2) {
-        setLayout({ p1: snapshot.playerOrder[0], p2: snapshot.playerOrder[1] });
-      }
       const mine = snapshot.playerState?.[myPID];
       animateToNewHand(mine?.hand ?? []);
+      if ((snapshot.cardsLeftToPlay ?? 0) >= 3) setSpentThisTurn(0);
     },
-    [myPID, animateToNewHand, layout]
+    [myPID, animateToNewHand]
   );
 
   const handleDraw = useCallback(
@@ -247,46 +260,47 @@ const PlayScreen: React.FC = () => {
     [myPID]
   );
 
-  /* connect */
+  /** Connect */
   const connect = useCallback(() => {
-    if (!roomId || !myPID || !myName) {
-      console.warn(
-        "PlayScreen: missing roomId/myPID/myName → redirecting home."
-      );
+    if (!roomId || !myPID) {
       navigate("/");
       return;
     }
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
+
     ws.onopen = () => {
       setWsReady(true);
       backoffRef.current = 500;
     };
+
     ws.onmessage = (evt) => {
       try {
         const msg: StateEnvelope = JSON.parse(evt.data);
-        if (isStateEnvelope(msg)) {
-          handleStateSnapshot(msg.gameState);
+        if ((msg as any).type === "STATE" && (msg as any).gameState) {
+          handleStateSnapshot((msg as any).gameState);
           return;
         }
-        if (isStartTurn(msg)) {
-          setGame((g) => (g ? { ...g, playerAtTurn: msg.playerId } : g));
+        if ((msg as any).type === "START_TURN") {
+          const pid = (msg as any).playerId as string;
+          setGame((g) => (g ? { ...g, playerAtTurn: pid } : g));
+          if (pid === myPID) setSpentThisTurn(0);
           return;
         }
-        if (isDraw(msg)) {
-          handleDraw(msg.playerId, msg.cards);
+        if ((msg as any).type === "DRAW") {
+          handleDraw((msg as any).playerId, (msg as any).cards);
           return;
         }
-        if (isRawState(msg)) {
-          handleStateSnapshot(msg);
+        if ((msg as any)?.playerAtTurn && (msg as any)?.playerState) {
+          handleStateSnapshot(msg as any);
           return;
         }
-        console.log("[Play] Unhandled WS message:", msg);
       } catch {
-        console.warn("[Play] Non-JSON WS frame:", evt.data);
+        /* empty */
       }
     };
-    ws.onerror = (e) => console.error("[Play] WS error:", e);
+
+    ws.onerror = () => {};
     ws.onclose = () => {
       setWsReady(false);
       const delay = Math.min(backoffRef.current, 6000);
@@ -294,7 +308,7 @@ const PlayScreen: React.FC = () => {
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       reconnectTimer.current = setTimeout(() => connect(), delay);
     };
-  }, [navigate, wsUrl, roomId, myPID, myName, handleStateSnapshot, handleDraw]);
+  }, [navigate, wsUrl, roomId, myPID, handleStateSnapshot, handleDraw]);
 
   useEffect(() => {
     connect();
@@ -305,187 +319,262 @@ const PlayScreen: React.FC = () => {
     };
   }, [connect]);
 
-  /* name helper */
-  const displayName = useCallback(
-    (pid?: string | null) => {
-      if (!pid) return "null";
-      if (pid === myPID) return (myName && myName.trim()) || "You";
-
-      const n = nameById[pid];
-      return n && n.trim() ? n.trim() : "Opponent";
-    },
-    [nameById, myPID, myName]
-  );
-
-  /* DnD — hand cards draggable */
-  const onDragStartCard = (card: ServerCard) => (e: React.DragEvent) => {
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData(CARD_MIME, JSON.stringify(card));
-  };
-
-  /* guards */
+  /** Derived */
   const isMyTurn = game?.playerAtTurn === myPID;
-  const canEndTurn = !!isMyTurn;
+  const playsLeft = Math.max(0, (game?.cardsLeftToPlay ?? 0) - spentThisTurn);
 
-  /* drops received from mat */
-  const dropToBank = useCallback(
-    (playerKey: "p1" | "p2", card: ServerCard) => {
-      if (!layout) return;
-      const myKey =
-        layout.p1 === myPID ? "p1" : layout.p2 === myPID ? "p2" : null;
-      if (!isMyTurn || !myKey || playerKey !== myKey) return;
-
-      // Bank MONEY or ACTION (including RENT); backend validates.
-      if (
-        card.type === "MONEY" ||
-        card.type === "GENERAL_ACTION" ||
-        card.type === "RENT_ACTION"
-      ) {
-        wsSend({ type: "PlayMoney", id: card.id });
-      } else {
-        console.warn(
-          "Ignoring bank drop for PROPERTY (not liquid money):",
-          card.id
-        );
-      }
-    },
-    [isMyTurn, myPID, layout, wsSend]
+  const orderedPids = (
+    game?.playerOrder?.length ? game.playerOrder : lobbyPlayers.map((p) => p.id)
+  ).slice(0, 5);
+  const playerCount = Math.max(2, Math.min(5, orderedPids.length || 2));
+  const Mat = useMemo(
+    () =>
+      ({ 2: Playmat2, 3: Playmat3, 4: Playmat4, 5: Playmat5 }[playerCount] ||
+      Playmat5),
+    [playerCount]
   );
 
-  const dropToProps = useCallback(
-    (playerKey: "p1" | "p2", card: ServerCard) => {
-      if (!layout) return;
-      const myKey =
-        layout.p1 === myPID ? "p1" : layout.p2 === myPID ? "p2" : null;
-      if (!isMyTurn || !myKey || playerKey !== myKey) return;
+  const layout: PlaymatProps["layout"] = useMemo(() => {
+    const seats = ["p1", "p2", "p3", "p4", "p5"] as const;
+    const m: Partial<Record<(typeof seats)[number], string>> = {};
+    orderedPids.forEach((pid, i) => {
+      m[seats[i]] = pid;
+    });
+    return m;
+  }, [orderedPids]);
 
-      if (card.type !== "PROPERTY") return;
+  const discardImages = useMemo(
+    () => (game?.discardPile ?? []).slice(-5).map(assetForCard),
+    [game?.discardPile]
+  );
+
+  /** Click-menu actions */
+  const onCardClick = (card: ServerCard) => {
+    if (!isMyTurn) return;
+    setMenuCard(card);
+    if (card.type === "PROPERTY") {
       const colors = card.colors ?? [];
-      if (colors.length <= 1) {
-        // single-color property; use the only color
-        const color = colors[0] ?? "";
-        if (!color) return;
-        wsSend({ type: "PlayProperty", id: card.id, color });
-      } else {
-        // multicolor or rainbow → open picker
-        setPendingPropDrop({ card });
-      }
-    },
-    [isMyTurn, myPID, layout, wsSend]
-  );
-
-  const dropToDiscard = useCallback(
-    (card: ServerCard) => {
-      if (!isMyTurn) return;
-      // auto-play simple actions only
-      if (card.type === "GENERAL_ACTION" && card.actionType === "PASS_GO") {
-        wsSend({ type: "PassGo", id: card.id });
-        return;
-      }
-      console.warn(
-        "Action needs targeting UI; not auto-playing:",
-        card.actionType
-      );
-    },
-    [isMyTurn, wsSend]
-  );
-
-  /* choose color modal commit */
-  const commitPropertyColor = (color: string) => {
-    if (!pendingPropDrop) return;
-    wsSend({ type: "PlayProperty", id: pendingPropDrop.card.id, color });
-    setPendingPropDrop(null);
+      setColorChoices(colors.length > 1 ? colors : null);
+    } else setColorChoices(null);
   };
 
-  /* ----- choose mat by count ----- */
-  const playerCount = (game?.playerOrder?.length ?? players.length) || 2;
-  const Mat = boardFor(playerCount);
+  const bankSelected = () => {
+    if (!menuCard || !isMyTurn || playsLeft <= 0) return;
+    if (menuCard.type === "MONEY") {
+      wsSend({ type: "PlayMoney", id: menuCard.id });
+      setSpentThisTurn((n) => n + 1);
+    }
+    setMenuCard(null);
+    setColorChoices(null);
+  };
 
-  /* discard images */
-  const discardImages = (game?.discardPile ?? []).slice(-3).map(assetForCard);
+  const playPropertySelected = (color?: string) => {
+    if (!menuCard || !isMyTurn || playsLeft <= 0) return;
+    const chosen = color ?? menuCard.colors?.[0];
+    if (!chosen) {
+      setMenuCard(null);
+      return;
+    }
+    wsSend({ type: "PlayProperty", id: menuCard.id, color: chosen });
+    setSpentThisTurn((n) => n + 1);
+    setMenuCard(null);
+    setColorChoices(null);
+  };
+
+  /** DnD drop handling (only to YOUR zones) */
+  const parseDropId = (id: string): { zone: string; pid?: string } => {
+    // bank:pid:<playerId> | collect:pid:<playerId> | discard
+    const parts = id.split(":");
+    if (parts[0] === "discard") return { zone: "discard" };
+    if (
+      (parts[0] === "bank" || parts[0] === "collect") &&
+      parts[1] === "pid" &&
+      parts[2]
+    ) {
+      return { zone: parts[0], pid: parts[2] };
+    }
+    return { zone: id };
+  };
+
+  const onDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      const card = active?.data?.current?.card as ServerCard | undefined;
+      if (!card || !over) return;
+      if (!isMyTurn || playsLeft <= 0) return;
+
+      const { zone, pid } = parseDropId(String(over.id));
+
+      // Only allow to YOUR bank/collection
+      if ((zone === "bank" || zone === "collect") && pid !== myPID) return;
+
+      switch (zone) {
+        case "bank": {
+          if (card.type === "MONEY") {
+            wsSend({ type: "PlayMoney", id: card.id });
+            setSpentThisTurn((n) => n + 1);
+          }
+          break;
+        }
+        case "collect": {
+          if (card.type === "PROPERTY") {
+            const colors = card.colors ?? [];
+            if (colors.length > 1) {
+              setMenuCard(card);
+              setColorChoices(colors);
+            } else if (colors[0]) {
+              wsSend({ type: "PlayProperty", id: card.id, color: colors[0] });
+              setSpentThisTurn((n) => n + 1);
+            }
+          }
+          break;
+        }
+        case "discard": {
+          // If backend supports discarding from hand:
+          // if (card.type === "MONEY" || card.type === "PROPERTY") {
+          //   wsSend({ type: "Discard", id: card.id });
+          //   setSpentThisTurn(n => n + 1);
+          // }
+          break;
+        }
+      }
+    },
+    [isMyTurn, playsLeft, myPID, wsSend]
+  );
+
+  /** End turn (allowed even if plays remain) */
+  const sendEndTurn = useCallback(() => {
+    if (isMyTurn) wsSend({ type: "EndTurn" });
+  }, [isMyTurn, wsSend]);
 
   return (
     <div className="board-shell">
-      <Mat
-        /* DnD + names + discard */
-        layout={boardFor(playerCount) === Mat ? layout : null}
-        myPID={myPID}
-        names={nameById}
-        discardImages={discardImages}
-        onDropBank={dropToBank}
-        onDropProps={dropToProps}
-        onDropDiscard={dropToDiscard}
-      />
-
-      {/* Top bar */}
-      <div className="play-topbar">
-        <div>
-          Room Code: <b>{roomCode || "—"}</b>
-        </div>
-        <div>
-          Room ID: <b>{roomId || "—"}</b>
-        </div>
-        <div>
-          You: <b>{myName}</b>
-        </div>
-        <div>
-          Turn: <b>{displayName(game?.playerAtTurn)}</b>
-        </div>
-        <div>
-          Draw pile: <b>{game?.drawPileSize ?? "-"}</b>
-        </div>
-        <div
-          className={`ws-dot ${wsReady ? "on" : "off"}`}
-          title={wsReady ? "Connected" : "Reconnecting..."}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
+      >
+        {/* Mat renders droppables for ALL seats in layout */}
+        <Mat
+          layout={layout}
+          myPID={myPID}
+          names={nameById}
+          discardImages={discardImages}
         />
-      </div>
 
-      {/* Actions */}
-      <div className="play-actions">
-        <button
-          className="endturn-btn"
-          onClick={sendEndTurn}
-          disabled={!canEndTurn}
-        >
-          End Turn
-        </button>
-      </div>
-
-      {/* Hand — draggable */}
-      <div className={`hand-overlay ${isAnimating ? "animating" : ""}`}>
-        {myHand.map((card, idx) => (
-          <div
-            key={`${card.id}-${idx}`}
-            className="hand-card"
-            draggable
-            onDragStart={onDragStartCard(card)}
-            title={`${card.type}${
-              card.actionType ? `: ${card.actionType}` : ""
-            }`}
-          >
-            <img src={assetForCard(card)} alt={card.type} draggable={false} />
+        {/* Top bar */}
+        <div className="play-topbar">
+          <div>
+            Room Code: <b>{roomCode || "—"}</b>
           </div>
-        ))}
-      </div>
-
-      {/* Color picker modal for multicolor/rainbow property drops */}
-      {pendingPropDrop && (
-        <div className="hand-modal" onClick={() => setPendingPropDrop(null)}>
+          <div>
+            Room ID: <b>{roomId || "—"}</b>
+          </div>
+          <div>
+            You: <b>{myName || "You"}</b>
+          </div>
+          <div>
+            Turn: <b>{displayName(game?.playerAtTurn)}</b>
+          </div>
+          <div>
+            Draw pile: <b>{game?.drawPileSize ?? "-"}</b>
+          </div>
+          <div>
+            Plays left: <b>{playsLeft}</b>
+          </div>
           <div
-            className="hand-modal-inner"
-            onClick={(e) => e.stopPropagation()}
+            className={`ws-dot ${wsReady ? "on" : "off"}`}
+            title={wsReady ? "Connected" : "Reconnecting..."}
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="play-actions">
+          <button
+            className="endturn-btn"
+            onClick={sendEndTurn}
+            disabled={!isMyTurn}
+            title={
+              isMyTurn
+                ? playsLeft > 0
+                  ? "You can still play more cards"
+                  : "End your turn"
+                : "Wait for your turn"
+            }
           >
-            <h3>Choose a color to play this property</h3>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {(pendingPropDrop.card.colors ?? []).map((c) => (
-                <button key={c} onClick={() => commitPropertyColor(c)}>
-                  {c}
+            End Turn
+          </button>
+        </div>
+
+        {/* Hand */}
+        <div className={`hand-overlay ${isAnimating ? "animating" : ""}`}>
+          {myHand.map((card, idx) => {
+            const canDrag =
+              isMyTurn &&
+              playsLeft > 0 &&
+              (card.type === "MONEY" || card.type === "PROPERTY");
+            return (
+              <DraggableCard
+                key={`${card.id}-${idx}`}
+                card={card}
+                canDrag={canDrag}
+                onClick={() => onCardClick(card)}
+              />
+            );
+          })}
+        </div>
+
+        <DragOverlay />
+      </DndContext>
+
+      {/* Inline property color picker / bank action */}
+      {menuCard && (
+        <div className="card-menu">
+          <div className="card-menu-row">
+            <span>
+              Selected: #{menuCard.id} {menuCard.type}
+            </span>
+          </div>
+          <div className="card-menu-row">
+            {menuCard.type === "MONEY" && (
+              <button
+                disabled={!isMyTurn || playsLeft <= 0}
+                onClick={bankSelected}
+              >
+                Bank
+              </button>
+            )}
+            {menuCard.type === "PROPERTY" && !colorChoices && (
+              <button
+                disabled={!isMyTurn || playsLeft <= 0}
+                onClick={() => playPropertySelected()}
+              >
+                Play as Property
+              </button>
+            )}
+          </div>
+          {menuCard.type === "PROPERTY" && colorChoices && (
+            <div className="card-menu-row">
+              {colorChoices.map((c) => (
+                <button
+                  key={c}
+                  disabled={!isMyTurn || playsLeft <= 0}
+                  onClick={() => playPropertySelected(c)}
+                >
+                  Play as {c}
                 </button>
               ))}
             </div>
-            <div style={{ marginTop: 12 }}>
-              <button onClick={() => setPendingPropDrop(null)}>Cancel</button>
-            </div>
+          )}
+          <div className="card-menu-row">
+            <button
+              onClick={() => {
+                setMenuCard(null);
+                setColorChoices(null);
+              }}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}

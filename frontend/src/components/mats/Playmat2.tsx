@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
+import { useDroppable } from "@dnd-kit/core";
 
 /* ------- images ------- */
 import backdrop from "@/assets/Backdrop.svg";
@@ -16,34 +17,60 @@ import { PLAYER_ID_KEY } from "../../constants/constants";
 type PlayerKey = "p1" | "p2";
 
 const Playmat2: React.FC = () => {
-  /* ------------------------------------------------------------------ */
-  /* local state                                                        */
-  /* ------------------------------------------------------------------ */
   const [openHandFor, setOpenHandFor] = useState<PlayerKey | null>(null);
 
   const myPID = sessionStorage.getItem(PLAYER_ID_KEY) ?? "";
-  /* TODO – replace with real IDs from your lobby/game store            */
+  // TODO: replace with real playerId mapping from your lobby/game store
   const pidMap: Record<PlayerKey, string> = { p1: "p1", p2: "p2" };
 
   const openHand = (pk: PlayerKey) => () => setOpenHandFor(pk);
   const closeHand = () => setOpenHandFor(null);
 
-  /* ------------------------------------------------------------------ */
-  /* render                                                             */
-  /* ------------------------------------------------------------------ */
+  // ---- dnd-kit droppable zones (per seat) ---------------------------
+  const { setNodeRef: setP1BankRef, isOver: p1BankOver } = useDroppable({
+    id: "bank:p1",
+  });
+  const { setNodeRef: setP1PropsRef, isOver: p1PropsOver } = useDroppable({
+    id: "collect:p1",
+  });
+
+  const { setNodeRef: setP2BankRef, isOver: p2BankOver } = useDroppable({
+    id: "bank:p2",
+  });
+  const { setNodeRef: setP2PropsRef, isOver: p2PropsOver } = useDroppable({
+    id: "collect:p2",
+  });
+
+  const { setNodeRef: setDiscardRef, isOver: discardOver } = useDroppable({
+    id: "discard",
+  });
+
   return (
     <div className="playing-mat-outline-2-players">
       {/* board backdrop */}
       <img className="backdrop" src={backdrop} alt="2-player backdrop" />
+
       <div className="mat-stage">
         {/* -------- Player 1 area -------------------------------------- */}
         <div className="player-1-space">
-          <div className="property-collection-zone">
-            <div className="property-collection" id="p1-properties" />
+          <div
+            className={`property-collection-zone droppable ${
+              p1PropsOver ? "is-over" : ""
+            }`}
+          >
+            <div
+              className="property-collection"
+              id="p1-properties"
+              ref={setP1PropsRef}
+            />
           </div>
 
           <div className="money-collection-bank">
-            <div className="bank-pile" id="p1-bank"></div>
+            <div
+              className={`bank-pile droppable ${p1BankOver ? "is-over" : ""}`}
+              id="p1-bank"
+              ref={setP1BankRef}
+            />
             {myPID === pidMap.p1 && (
               <button className="hand-toggle" onClick={openHand("p1")}>
                 Hand
@@ -54,12 +81,24 @@ const Playmat2: React.FC = () => {
 
         {/* -------- Player 2 area -------------------------------------- */}
         <div className="player-2-space">
-          <div className="player-2-property-collection-zone">
-            <div className="property-collection2" id="p2-properties" />
+          <div
+            className={`player-2-property-collection-zone droppable ${
+              p2PropsOver ? "is-over" : ""
+            }`}
+          >
+            <div
+              className="property-collection2"
+              id="p2-properties"
+              ref={setP2PropsRef}
+            />
           </div>
 
           <div className="player-2-money-collection-bank">
-            <div className="bank-pile2" id="p2-bank"></div>
+            <div
+              className={`bank-pile2 droppable ${p2BankOver ? "is-over" : ""}`}
+              id="p2-bank"
+              ref={setP2BankRef}
+            />
             {myPID === pidMap.p2 && (
               <button className="hand-toggle" onClick={openHand("p2")}>
                 Hand
@@ -76,7 +115,10 @@ const Playmat2: React.FC = () => {
             </div>
           </div>
 
-          <div className="discard-pile">
+          <div
+            className={`discard-pile droppable ${discardOver ? "is-over" : ""}`}
+            ref={setDiscardRef}
+          >
             <img className="card-1" src={discard1} alt="" aria-hidden />
             <img className="card-2" src={discard2} alt="" aria-hidden />
             <img className="card-3" src={discard3} alt="" aria-hidden />
