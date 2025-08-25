@@ -84,10 +84,6 @@ const Playmat2: React.FC = () => {
         </div>
       </div>
 
-      {/* -------------------- Player 2 board ------------------------- */}
-
-      {/* -------------------- Player 1 board ------------------------- */}
-
       {/* -------------------- Hand modal (local player) -------------- */}
       {openHandFor &&
         myPID === pidMap[openHandFor] &&

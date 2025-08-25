@@ -16,7 +16,23 @@ import { PLAYER_ID_KEY } from "../../constants/constants";
 
 type PlayerKey = "p1" | "p2" | "p3" | "p4" | "p5";
 
-const Playmat5: React.FC = () => {
+type PlaymatProps = {
+  layout: { p1: string; p2: string } | null;
+  myPID: string;
+  names: Record<string, string>;
+  discardImages: string[];
+  onDropBank: (
+    playerKey: "p1" | "p2",
+    card: import("../../pages/PlayScreen").ServerCard
+  ) => void;
+  onDropProps: (
+    playerKey: "p1" | "p2",
+    card: import("../../pages/PlayScreen").ServerCard
+  ) => void;
+  onDropDiscard: (card: import("../../pages/PlayScreen").ServerCard) => void;
+};
+
+const Playmat5: React.FC<PlaymatProps> = () => {
   const [openHandFor, setOpenHandFor] = useState<PlayerKey | null>(null);
   const myPID = sessionStorage.getItem(PLAYER_ID_KEY) ?? "";
 
