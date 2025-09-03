@@ -428,7 +428,9 @@ const PlayScreen: React.FC = () => {
   }, [isMyTurn, wsSend]);
 
   return (
-    <div className="board-shell">
+    <div className="w-[80vw] h-[80vh] overflow-hidden">
+      <div className="w-[80vw] h-[80vh] overflow-hidden bg-blue-500">Test</div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
