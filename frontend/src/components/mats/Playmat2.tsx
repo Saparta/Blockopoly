@@ -8,7 +8,7 @@ import backdrop from "@/assets/Backdrop.svg";
 import "@/components/mats/mat_styles/playmat_shared.css";
 import "./mat_styles/Playmat2.css";
 
-import { PLAYER_ID_KEY } from "../../constants/constants";
+// import { PLAYER_ID_KEY } from "../../constants/constants";
 
 /** Keep this in sync with PlayScreen's type */
 export type PlaymatProps = {

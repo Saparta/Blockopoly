@@ -1,17 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* src/pages/PlayScreen.tsx --------------------------------------------------
-   Final, scalable Play Screen using dnd-kit + flat GameAction messages.
-   - Sends ONLY the polymorphic GameAction JSON over WS (no envelope).
-     Examples the server expects:
-       {"type":"EndTurn"}
-       {"type":"PlayMoney","id":42}
-       {"type":"PlayProperty","id":13,"color":"Blue"}
-   - Works 2–5 players. Playmats must expose droppables with ids:
-       bank:pid:<playerId>     collect:pid:<playerId>     discard
-   - A player can drop ONLY into their own bank/collection zones.
-   - Drag plays are limited to MONEY→Bank and PROPERTY→Collection.
-   - Client guard for max 3 plays/turn (uses server cardsLeftToPlay minus local sends).
-   - End Turn button is enabled whenever it's your turn (you may end early).
+   Fixed version with aligned drop IDs, dynamic discard, and drag overlay.
 ---------------------------------------------------------------------------- */
 
 import React, {
@@ -38,17 +27,17 @@ import {
   PointerSensor,
   closestCenter,
   type DragEndEvent,
-  useDraggable,
+  type DragStartEvent,
   DragOverlay,
 } from "@dnd-kit/core";
+import { useDraggable } from "@dnd-kit/core";
 
 import { cardAssetMap } from "../utils/cardmapping";
 const cardBack = new URL("../assets/cards/card-back.svg", import.meta.url).href;
 
-/** Mat components for 2–5 players (must render droppables with the ids detailed above) */
-// Tell TS what props mats accept so <Mat .../> type-checks
+/** Mat components (2–5 players) */
 export type PlaymatProps = {
-  layout: Partial<Record<"p1" | "p2" | "p3" | "p4" | "p5", string>>; // seat -> playerId
+  layout: Partial<Record<"p1" | "p2" | "p3" | "p4" | "p5", string>>;
   myPID: string;
   names: Record<string, string>;
   discardImages?: string[];
@@ -66,7 +55,7 @@ const Playmat5 = lazy(
   () => import("../components/mats/Playmat5")
 ) as React.LazyExoticComponent<React.ComponentType<PlaymatProps>>;
 
-/** Server-aligned types (minimal) */
+/** Server types */
 type ServerCardType = "GENERAL_ACTION" | "RENT_ACTION" | "PROPERTY" | "MONEY";
 type ServerCard = {
   id: number;
@@ -85,8 +74,8 @@ type ServerPlayerState = {
 type ServerGameState = {
   playerAtTurn: string | null;
   winningPlayer: string | null;
-  cardsLeftToPlay: number; // server is source of truth
-  playerOrder: string[]; // playerIds in seat order
+  cardsLeftToPlay: number;
+  playerOrder: string[];
   drawPileSize: number;
   pendingInteractions: Record<string, unknown>;
   playerState: Record<string, ServerPlayerState>;
@@ -99,15 +88,13 @@ type StateEnvelope =
   | { type: "DRAW"; playerId: string; cards: ServerCard[] }
   | Record<string, unknown>;
 
-/** Actions (flat polymorphic) */
+/** Actions */
 type Color = string;
 type Action =
   | { type: "EndTurn" }
   | { type: "PlayMoney"; id: number }
   | { type: "PlayProperty"; id: number; color: Color };
-// | { type: "Discard"; id: number }
 
-/** Config */
 const GAME_API = import.meta.env.VITE_GAME_SERVICE ?? "http://localhost:8081";
 const toWs = (base: string) =>
   base
@@ -145,7 +132,6 @@ const DraggableCard: React.FC<{
   );
 };
 
-/** Component */
 type LobbyPlayer = { id: string; name?: string | null };
 
 const PlayScreen: React.FC = () => {
@@ -156,7 +142,6 @@ const PlayScreen: React.FC = () => {
   const myPID = sessionStorage.getItem(PLAYER_ID_KEY) || "";
   const roomId = sessionStorage.getItem(ROOM_ID_KEY) || "";
 
-  // Friendly names (no blanks)
   const playersRaw = sessionStorage.getItem(PLAYERS_KEY) ?? "[]";
   const lobbyPlayers = useMemo(
     () => (JSON.parse(playersRaw) as LobbyPlayer[]).filter(Boolean),
@@ -180,7 +165,7 @@ const PlayScreen: React.FC = () => {
     [nameById, myPID, myName]
   );
 
-  /** Local state */
+  /** State */
   const [game, setGame] = useState<ServerGameState | null>(null);
   const [myHand, setMyHand] = useState<ServerCard[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -188,6 +173,7 @@ const PlayScreen: React.FC = () => {
   const [menuCard, setMenuCard] = useState<ServerCard | null>(null);
   const [colorChoices, setColorChoices] = useState<string[] | null>(null);
   const [spentThisTurn, setSpentThisTurn] = useState(0);
+  const [activeCard, setActiveCard] = useState<ServerCard | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -201,7 +187,6 @@ const PlayScreen: React.FC = () => {
     [roomId, myPID]
   );
 
-  /** WS send helper — flat action */
   const wsSend = useCallback((action: Action) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
@@ -239,7 +224,7 @@ const PlayScreen: React.FC = () => {
     });
   }, []);
 
-  /** Snapshot handling */
+  /** WS snapshot handling */
   const handleStateSnapshot = useCallback(
     (snapshot: ServerGameState) => {
       setGame(snapshot);
@@ -260,7 +245,6 @@ const PlayScreen: React.FC = () => {
     [myPID]
   );
 
-  /** Connect */
   const connect = useCallback(() => {
     if (!roomId || !myPID) {
       navigate("/");
@@ -296,11 +280,10 @@ const PlayScreen: React.FC = () => {
           return;
         }
       } catch {
-        /* empty */
+        /* ignore */
       }
     };
 
-    ws.onerror = () => {};
     ws.onclose = () => {
       setWsReady(false);
       const delay = Math.min(backoffRef.current, 6000);
@@ -343,8 +326,9 @@ const PlayScreen: React.FC = () => {
     return m;
   }, [orderedPids]);
 
+  // last 3 images; newest at the end
   const discardImages = useMemo(
-    () => (game?.discardPile ?? []).slice(-5).map(assetForCard),
+    () => (game?.discardPile ?? []).slice(-3).map(assetForCard),
     [game?.discardPile]
   );
 
@@ -381,9 +365,8 @@ const PlayScreen: React.FC = () => {
     setColorChoices(null);
   };
 
-  /** DnD drop handling (only to YOUR zones) */
+  /** DnD drop handling */
   const parseDropId = (id: string): { zone: string; pid?: string } => {
-    // bank:pid:<playerId> | collect:pid:<playerId> | discard
     const parts = id.split(":");
     if (parts[0] === "discard") return { zone: "discard" };
     if (
@@ -396,27 +379,31 @@ const PlayScreen: React.FC = () => {
     return { zone: id };
   };
 
+  const onDragStart = useCallback((event: DragStartEvent) => {
+    const card = event.active?.data?.current?.card as ServerCard | undefined;
+    setActiveCard(card ?? null);
+  }, []);
+
   const onDragEnd = useCallback(
     (event: DragEndEvent) => {
+      setActiveCard(null);
+
       const { active, over } = event;
       const card = active?.data?.current?.card as ServerCard | undefined;
       if (!card || !over) return;
       if (!isMyTurn || playsLeft <= 0) return;
 
       const { zone, pid } = parseDropId(String(over.id));
-
-      // Only allow to YOUR bank/collection
       if ((zone === "bank" || zone === "collect") && pid !== myPID) return;
 
       switch (zone) {
-        case "bank": {
+        case "bank":
           if (card.type === "MONEY") {
             wsSend({ type: "PlayMoney", id: card.id });
             setSpentThisTurn((n) => n + 1);
           }
           break;
-        }
-        case "collect": {
+        case "collect":
           if (card.type === "PROPERTY") {
             const colors = card.colors ?? [];
             if (colors.length > 1) {
@@ -428,21 +415,14 @@ const PlayScreen: React.FC = () => {
             }
           }
           break;
-        }
-        case "discard": {
-          // If backend supports discarding from hand:
-          // if (card.type === "MONEY" || card.type === "PROPERTY") {
-          //   wsSend({ type: "Discard", id: card.id });
-          //   setSpentThisTurn(n => n + 1);
-          // }
+        case "discard":
+          // Hook here if you implement a Discard action server-side
           break;
-        }
       }
     },
     [isMyTurn, playsLeft, myPID, wsSend]
   );
 
-  /** End turn (allowed even if plays remain) */
   const sendEndTurn = useCallback(() => {
     if (isMyTurn) wsSend({ type: "EndTurn" });
   }, [isMyTurn, wsSend]);
@@ -452,9 +432,9 @@ const PlayScreen: React.FC = () => {
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        {/* Mat renders droppables for ALL seats in layout */}
         <Mat
           layout={layout}
           myPID={myPID}
@@ -494,13 +474,6 @@ const PlayScreen: React.FC = () => {
             className="endturn-btn"
             onClick={sendEndTurn}
             disabled={!isMyTurn}
-            title={
-              isMyTurn
-                ? playsLeft > 0
-                  ? "You can still play more cards"
-                  : "End your turn"
-                : "Wait for your turn"
-            }
           >
             End Turn
           </button>
@@ -524,7 +497,18 @@ const PlayScreen: React.FC = () => {
           })}
         </div>
 
-        <DragOverlay />
+        {/* Drag preview */}
+        <DragOverlay>
+          {activeCard ? (
+            <div className="hand-card dragging">
+              <img
+                src={assetForCard(activeCard)}
+                alt={activeCard.type}
+                draggable={false}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       {/* Inline property color picker / bank action */}
