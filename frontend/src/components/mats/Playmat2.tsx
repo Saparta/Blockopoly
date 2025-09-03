@@ -1,3 +1,6 @@
+// Playmat2.tsx
+/* src/components/mats/Playmat2.tsx */
+//  has the 2-player layout and logic for tracking last played card in discard pile
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { useDroppable } from "@dnd-kit/core";
