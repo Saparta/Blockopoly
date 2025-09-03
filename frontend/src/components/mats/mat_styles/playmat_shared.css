@@ -168,6 +168,15 @@
   overflow: auto;
 }
 
+.droppable {
+  position: relative;
+  z-index: 5;
+  pointer-events: auto;
+}
+.backdrop {
+  z-index: -1;
+}
+
 /* optional shared hand button */
 .hand-toggle {
   position: absolute;

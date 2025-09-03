@@ -4,46 +4,67 @@ import { useDroppable } from "@dnd-kit/core";
 
 /* ------- images ------- */
 import backdrop from "@/assets/Backdrop.svg";
-import drawPileImg from "@/assets/cards/card-back.svg";
-import discard1 from "@/assets/cards/action-birthday.svg";
-import discard2 from "@/assets/cards/action-dealbreaker.svg";
-import discard3 from "@/assets/cards/action-debt-collector.svg";
 
 import "@/components/mats/mat_styles/playmat_shared.css";
 import "./mat_styles/Playmat2.css";
 
 import { PLAYER_ID_KEY } from "../../constants/constants";
 
+/** Keep this in sync with PlayScreen's type */
+export type PlaymatProps = {
+  layout: Partial<Record<"p1" | "p2", string>>; // seat -> playerId
+  myPID: string;
+  names: Record<string, string>;
+  discardImages?: string[]; // newest last
+};
+
 type PlayerKey = "p1" | "p2";
 
-const Playmat2: React.FC = () => {
+const Playmat2: React.FC<PlaymatProps> = ({
+  layout,
+  myPID,
+  names,
+  discardImages = [],
+}) => {
   const [openHandFor, setOpenHandFor] = useState<PlayerKey | null>(null);
 
-  const myPID = sessionStorage.getItem(PLAYER_ID_KEY) ?? "";
-  // TODO: replace with real playerId mapping from your lobby/game store
-  const pidMap: Record<PlayerKey, string> = { p1: "p1", p2: "p2" };
+  // pull the true pids from layout
+  const pidMap: Record<PlayerKey, string> = {
+    p1: layout.p1 ?? "",
+    p2: layout.p2 ?? "",
+  };
 
   const openHand = (pk: PlayerKey) => () => setOpenHandFor(pk);
   const closeHand = () => setOpenHandFor(null);
 
   // ---- dnd-kit droppable zones (per seat) ---------------------------
   const { setNodeRef: setP1BankRef, isOver: p1BankOver } = useDroppable({
-    id: "bank:p1",
+    id: `bank:pid:${pidMap.p1}`,
   });
   const { setNodeRef: setP1PropsRef, isOver: p1PropsOver } = useDroppable({
-    id: "collect:p1",
+    id: `collect:pid:${pidMap.p1}`,
   });
 
   const { setNodeRef: setP2BankRef, isOver: p2BankOver } = useDroppable({
-    id: "bank:p2",
+    id: `bank:pid:${pidMap.p2}`,
   });
   const { setNodeRef: setP2PropsRef, isOver: p2PropsOver } = useDroppable({
-    id: "collect:p2",
+    id: `collect:pid:${pidMap.p2}`,
   });
 
   const { setNodeRef: setDiscardRef, isOver: discardOver } = useDroppable({
     id: "discard",
   });
+
+  // compute three visible discard images: 1 = oldest, 3 = newest
+  const lastThree = discardImages.slice(-3);
+  const [d1, d2, d3] = [
+    lastThree[0] ?? null, // oldest of visible
+    lastThree[1] ?? null,
+    lastThree[2] ?? null, // newest
+  ];
+
+  const nameFor = (pid?: string) => (pid && names[pid]) || "Opponent";
 
   return (
     <div className="playing-mat-outline-2-players">
@@ -62,6 +83,7 @@ const Playmat2: React.FC = () => {
               className="property-collection"
               id="p1-properties"
               ref={setP1PropsRef}
+              aria-label={`${nameFor(pidMap.p1)} property collection`}
             />
           </div>
 
@@ -70,6 +92,7 @@ const Playmat2: React.FC = () => {
               className={`bank-pile droppable ${p1BankOver ? "is-over" : ""}`}
               id="p1-bank"
               ref={setP1BankRef}
+              aria-label={`${nameFor(pidMap.p1)} bank`}
             />
             {myPID === pidMap.p1 && (
               <button className="hand-toggle" onClick={openHand("p1")}>
@@ -90,6 +113,7 @@ const Playmat2: React.FC = () => {
               className="property-collection2"
               id="p2-properties"
               ref={setP2PropsRef}
+              aria-label={`${nameFor(pidMap.p2)} property collection`}
             />
           </div>
 
@@ -98,6 +122,7 @@ const Playmat2: React.FC = () => {
               className={`bank-pile2 droppable ${p2BankOver ? "is-over" : ""}`}
               id="p2-bank"
               ref={setP2BankRef}
+              aria-label={`${nameFor(pidMap.p2)} bank`}
             />
             {myPID === pidMap.p2 && (
               <button className="hand-toggle" onClick={openHand("p2")}>
@@ -110,18 +135,20 @@ const Playmat2: React.FC = () => {
         {/* -------------------- Draw / discard piles ------------------- */}
         <div className="center-pile">
           <div className="draw-pile">
-            <div className="deck">
-              <img className="deck-top" src={drawPileImg} alt="Deck" />
-            </div>
+            <div className="deck" />
           </div>
 
           <div
             className={`discard-pile droppable ${discardOver ? "is-over" : ""}`}
             ref={setDiscardRef}
+            aria-label="discard pile"
           >
-            <img className="card-1" src={discard1} alt="" aria-hidden />
-            <img className="card-2" src={discard2} alt="" aria-hidden />
-            <img className="card-3" src={discard3} alt="" aria-hidden />
+            {/* dynamic discard thumbnails; remove placeholders */}
+            {d1 && <img className="card-1" src={d1} alt="" aria-hidden />}
+            {d2 && <img className="card-2" src={d2} alt="" aria-hidden />}
+            {d3 && (
+              <img className="card-3" src={d3} alt="Most recent discard" />
+            )}
           </div>
         </div>
       </div>
@@ -136,7 +163,7 @@ const Playmat2: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <h2>Your hand</h2>
-              {/* TODO – map real cards */}
+              {/* TODO – map real cards here if you want a modal hand view */}
               <button onClick={closeHand}>Close</button>
             </div>
           </div>,
