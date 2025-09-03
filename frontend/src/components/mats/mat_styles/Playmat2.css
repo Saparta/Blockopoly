@@ -1,5 +1,5 @@
 /* playmat_shared.css (or Playmat2.css) */
-.playing-mat-outline-2-players {
+/* .playing-mat-outline-2-players {
   position: fixed;
   inset: 0;
   display: flex;
@@ -15,10 +15,10 @@
   height: 100%;
   object-fit: cover;
   z-index: -1;
-}
+} */
 
 /* 🔑 scalable design surface */
-.mat-stage {
+/* .mat-stage {
   --scale: calc(min(100vw / 1920, 100vh / 1080));
   width: 1920px;
   height: 1080px;
@@ -130,4 +130,4 @@
   width: 8.9375rem;
   height: 4.5rem;
   -webkit-text-stroke: 0.0625rem #000000;
-}
+} */

@@ -443,7 +443,9 @@ const PlayScreen: React.FC = () => {
         />
 
         {/* Top bar */}
-        <div className="play-topbar">
+        <div className="absolute top-2 left-3 z-10 flex gap-4 px-2.5 py-1.5 
+            bg-black/45 rounded-[10px] text-sm text-white 
+            border border-white/10 backdrop-blur-[6px]">
           <div>
             Room Code: <b>{roomCode || "—"}</b>
           </div>

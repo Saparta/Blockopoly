@@ -9,7 +9,7 @@ import { useDroppable } from "@dnd-kit/core";
 import backdrop from "@/assets/Backdrop.svg";
 
 import "@/components/mats/mat_styles/playmat_shared.css";
-import "./mat_styles/Playmat2.css";
+// import "./mat_styles/Playmat2.css";
 
 // import { PLAYER_ID_KEY } from "../../constants/constants";
 
