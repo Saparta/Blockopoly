@@ -182,9 +182,6 @@ const PlayScreen: React.FC = () => {
   const [colorChoices, setColorChoices] = useState<string[] | null>(null);
   const [spentThisTurn, setSpentThisTurn] = useState(0);
   const [activeCard, setActiveCard] = useState<ServerCard | null>(null);
-  const [showMovePropertyUI, setShowMovePropertyUI] = useState(false);
-  const [selectedPropertyForMove, setSelectedPropertyForMove] =
-    useState<ServerCard | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -402,20 +399,20 @@ const PlayScreen: React.FC = () => {
       const { active, over } = event;
       const card = active?.data?.current?.card as ServerCard | undefined;
       if (!card || !over) return;
-      if (!isMyTurn) return;
+      if (!isMyTurn || playsLeft <= 0) return;
 
       const { zone, pid } = parseDropId(String(over.id));
       if ((zone === "bank" || zone === "collect") && pid !== myPID) return;
 
       switch (zone) {
         case "bank":
-          if (card.type === "MONEY" && playsLeft > 0) {
+          if (card.type === "MONEY") {
             wsSend({ type: "PlayMoney", id: card.id });
             setSpentThisTurn((n) => n + 1);
           }
           break;
         case "collect":
-          if (card.type === "PROPERTY" && playsLeft > 0) {
+          if (card.type === "PROPERTY") {
             const colors = card.colors ?? [];
             if (colors.length > 1) {
               setMenuCard(card);
@@ -427,7 +424,7 @@ const PlayScreen: React.FC = () => {
           }
           break;
         case "discard":
-          // Allow discarding any card from hand (no playsLeft restriction for cleanup)
+          // Allow discarding any card from hand during cleanup phase
           wsSend({ type: "Discard", cardId: card.id });
           break;
       }
@@ -440,7 +437,7 @@ const PlayScreen: React.FC = () => {
   }, [isMyTurn, wsSend]);
 
   return (
-    <div className="play-screen-container">
+    <div className="w-[80vw] h-[80vh] overflow-hidden">
       {/* Tailwind Test - This should show a blue box with Tailwind styling */}
       <div
         className="fixed top-4 right-4 z-50 bg-blue-500 text-white p-4 rounded-lg shadow-lg 
@@ -466,7 +463,12 @@ const PlayScreen: React.FC = () => {
         />
 
         {/* Top bar */}
-        <div className="top-bar">
+        <div
+          className="absolute top-2 left-3 z-10 flex gap-4 px-2.5 py-1.5 
+            bg-black/45 rounded-[10px] text-sm text-white 
+            border border-white/10 backdrop-blur-[6px]
+            shadow-lg hover:shadow-xl transition-shadow duration-300"
+        >
           <div>
             Room Code: <b>{roomCode || "—"}</b>
           </div>
@@ -592,7 +594,11 @@ const PlayScreen: React.FC = () => {
                            transition-colors duration-200 shadow-md"
                 disabled={!isMyTurn}
                 onClick={() => {
-                  setShowMovePropertyUI(true);
+                  // TODO: Implement property movement UI
+                  // For now, just show that the action is available
+                  alert(
+                    "MoveProperty action is available - UI implementation needed"
+                  );
                   setMenuCard(null);
                   setColorChoices(null);
                 }}
@@ -610,132 +616,6 @@ const PlayScreen: React.FC = () => {
             >
               Cancel
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* MoveProperty UI */}
-      {showMovePropertyUI && (
-        <div className="move-property-overlay">
-          <div className="move-property-modal">
-            <div className="move-property-header">
-              <h3>Move Property</h3>
-              <button
-                className="close-btn"
-                onClick={() => {
-                  setShowMovePropertyUI(false);
-                  setSelectedPropertyForMove(null);
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="move-property-content">
-              <div className="property-sets-section">
-                <h4>Your Property Sets</h4>
-                <div className="property-sets-grid">
-                  {game?.playerState[myPID]?.propertyCollection ? (
-                    Object.entries(
-                      game.playerState[myPID].propertyCollection
-                    ).map(([setId, properties]) => (
-                      <div key={setId} className="property-set">
-                        <div className="set-header">
-                          <span className="set-color">
-                            Set {setId.slice(0, 4)}
-                          </span>
-                          <span className="set-count">
-                            {properties.length} cards
-                          </span>
-                        </div>
-                        <div className="set-properties">
-                          {properties.map((property) => (
-                            <div
-                              key={property.id}
-                              className={`property-card ${
-                                selectedPropertyForMove?.id === property.id
-                                  ? "selected"
-                                  : ""
-                              }`}
-                              onClick={() =>
-                                setSelectedPropertyForMove(property)
-                              }
-                            >
-                              <img
-                                src={assetForCard(property)}
-                                alt={`Property ${property.id}`}
-                                className="property-card-img"
-                              />
-                              <div className="card-flip-indicator">
-                                {property.colors && property.colors.length > 1
-                                  ? "🔄"
-                                  : ""}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="no-properties">
-                      No properties in collection
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {selectedPropertyForMove && (
-                <div className="move-actions">
-                  <div className="selected-property">
-                    <h4>Selected: Property #{selectedPropertyForMove.id}</h4>
-                    <div className="property-preview">
-                      <img
-                        src={assetForCard(selectedPropertyForMove)}
-                        alt={`Property ${selectedPropertyForMove.id}`}
-                        className="preview-card"
-                      />
-                      <div className="property-info">
-                        <p>
-                          Colors:{" "}
-                          {selectedPropertyForMove.colors?.join(", ") || "Any"}
-                        </p>
-                        <p>Value: {selectedPropertyForMove.value || "N/A"}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="target-sets">
-                    <h4>Move to Set:</h4>
-                    <div className="target-options">
-                      {game?.playerState[myPID]?.propertyCollection ? (
-                        Object.entries(
-                          game.playerState[myPID].propertyCollection
-                        ).map(([setId, properties]) => (
-                          <button
-                            key={setId}
-                            className="target-set-btn"
-                            onClick={() => {
-                              // Mock implementation - in real version would send MoveProperty action
-                              alert(
-                                `Would move property ${
-                                  selectedPropertyForMove.id
-                                } to Set ${setId.slice(0, 4)}`
-                              );
-                              setShowMovePropertyUI(false);
-                              setSelectedPropertyForMove(null);
-                            }}
-                          >
-                            Set {setId.slice(0, 4)} ({properties.length} cards)
-                          </button>
-                        ))
-                      ) : (
-                        <div>No target sets available</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       )}
