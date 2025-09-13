@@ -75,3 +75,11 @@ data class PlayDevelopment(val id: Int, val propertySetId: String) : GameAction
 @Serializable
 @SerialName("RestartGame")
 class RestartGame() : GameAction
+
+@Serializable
+@SerialName("Discard")
+data class Discard(val cardId: Int) : GameAction
+
+@Serializable
+@SerialName("MoveProperty")
+data class MoveProperty(val cardId: Int, val fromSetId: String?, val toSetId: String, val position: Int? = null) : GameAction

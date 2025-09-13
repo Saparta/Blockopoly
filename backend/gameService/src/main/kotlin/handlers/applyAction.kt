@@ -7,11 +7,13 @@ import com.gameservice.models.AcceptJsn
 import com.gameservice.models.Birthday
 import com.gameservice.models.Dealbreaker
 import com.gameservice.models.DebtCollect
+import com.gameservice.models.Discard
 import com.gameservice.models.EndTurn
 import com.gameservice.models.ForcedDeal
 import com.gameservice.models.GameAction
 import com.gameservice.models.GameState
 import com.gameservice.models.JustSayNo
+import com.gameservice.models.MoveProperty
 import com.gameservice.models.PassGo
 import com.gameservice.models.PlayDevelopment
 import com.gameservice.models.PlayMoney
@@ -40,6 +42,8 @@ suspend fun applyAction(room: DealGame, game: MutableStateFlow<GameState>, playe
         is Dealbreaker -> dealbreaker(room, game, playerId, action)
         is AcceptDeal -> acceptDeal(room, game, playerId, action)
         is EndTurn -> endTurn(room, game, playerId)
+        is Discard -> discard(room, game, playerId, action)
+        is MoveProperty -> moveProperty(room, game, playerId, action)
         is RestartGame -> return game.value
     }
 }

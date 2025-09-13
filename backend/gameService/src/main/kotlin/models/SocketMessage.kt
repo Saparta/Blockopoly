@@ -94,3 +94,11 @@ data class DealbreakerMessage(override val requester: String, val targetPlayer: 
 @Serializable
 @SerialName("DEALBREAKER_ACCEPTED")
 data class DealbreakerAcceptedMessage(val requester: String, val targetPlayer: String, val takenSetId: String) : SocketMessage
+
+@Serializable
+@SerialName("CARD_DISCARDED")
+data class CardDiscardedMessage(val playerId: String, val cardId: Int, val remainingHandCount: Int) : SocketMessage
+
+@Serializable
+@SerialName("PROPERTY_MOVED")
+data class PropertyMovedMessage(val playerId: String, val cardId: Int, val fromSetId: String?, val toSetId: String, val newIdentityIfWild: Color?) : SocketMessage

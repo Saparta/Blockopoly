@@ -93,7 +93,15 @@ type Color = string;
 type Action =
   | { type: "EndTurn" }
   | { type: "PlayMoney"; id: number }
-  | { type: "PlayProperty"; id: number; color: Color };
+  | { type: "PlayProperty"; id: number; color: Color }
+  | { type: "Discard"; cardId: number }
+  | {
+      type: "MoveProperty";
+      cardId: number;
+      fromSetId: string | null;
+      toSetId: string;
+      position?: number;
+    };
 
 const GAME_API = import.meta.env.VITE_GAME_SERVICE ?? "http://localhost:8081";
 const toWs = (base: string) =>
@@ -174,6 +182,9 @@ const PlayScreen: React.FC = () => {
   const [colorChoices, setColorChoices] = useState<string[] | null>(null);
   const [spentThisTurn, setSpentThisTurn] = useState(0);
   const [activeCard, setActiveCard] = useState<ServerCard | null>(null);
+  const [showMovePropertyUI, setShowMovePropertyUI] = useState(false);
+  const [selectedPropertyForMove, setSelectedPropertyForMove] =
+    useState<ServerCard | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -391,20 +402,20 @@ const PlayScreen: React.FC = () => {
       const { active, over } = event;
       const card = active?.data?.current?.card as ServerCard | undefined;
       if (!card || !over) return;
-      if (!isMyTurn || playsLeft <= 0) return;
+      if (!isMyTurn) return;
 
       const { zone, pid } = parseDropId(String(over.id));
       if ((zone === "bank" || zone === "collect") && pid !== myPID) return;
 
       switch (zone) {
         case "bank":
-          if (card.type === "MONEY") {
+          if (card.type === "MONEY" && playsLeft > 0) {
             wsSend({ type: "PlayMoney", id: card.id });
             setSpentThisTurn((n) => n + 1);
           }
           break;
         case "collect":
-          if (card.type === "PROPERTY") {
+          if (card.type === "PROPERTY" && playsLeft > 0) {
             const colors = card.colors ?? [];
             if (colors.length > 1) {
               setMenuCard(card);
@@ -416,7 +427,8 @@ const PlayScreen: React.FC = () => {
           }
           break;
         case "discard":
-          // Hook here if you implement a Discard action server-side
+          // Allow discarding any card from hand (no playsLeft restriction for cleanup)
+          wsSend({ type: "Discard", cardId: card.id });
           break;
       }
     },
@@ -428,8 +440,17 @@ const PlayScreen: React.FC = () => {
   }, [isMyTurn, wsSend]);
 
   return (
-    <div className="w-[80vw] h-[80vh] overflow-hidden">
-      <div className="w-[80vw] h-[80vh] overflow-hidden bg-blue-500">Test</div>
+    <div className="play-screen-container">
+      {/* Tailwind Test - This should show a blue box with Tailwind styling */}
+      <div
+        className="fixed top-4 right-4 z-50 bg-blue-500 text-white p-4 rounded-lg shadow-lg 
+                      transform hover:scale-105 transition-transform duration-200"
+      >
+        <div className="text-sm font-bold">Tailwind Test</div>
+        <div className="text-xs opacity-75">
+          If you see this styled box, Tailwind is working!
+        </div>
+      </div>
 
       <DndContext
         sensors={sensors}
@@ -445,9 +466,7 @@ const PlayScreen: React.FC = () => {
         />
 
         {/* Top bar */}
-        <div className="absolute top-2 left-3 z-10 flex gap-4 px-2.5 py-1.5 
-            bg-black/45 rounded-[10px] text-sm text-white 
-            border border-white/10 backdrop-blur-[6px]">
+        <div className="top-bar">
           <div>
             Room Code: <b>{roomCode || "—"}</b>
           </div>
@@ -475,7 +494,9 @@ const PlayScreen: React.FC = () => {
         {/* Actions */}
         <div className="play-actions">
           <button
-            className="endturn-btn"
+            className="endturn-btn bg-game-blue hover:bg-blue-600 disabled:bg-gray-500 
+                       text-white font-semibold px-4 py-2 rounded-lg 
+                       transition-colors duration-200 shadow-md hover:shadow-lg"
             onClick={sendEndTurn}
             disabled={!isMyTurn}
           >
@@ -517,15 +538,18 @@ const PlayScreen: React.FC = () => {
 
       {/* Inline property color picker / bank action */}
       {menuCard && (
-        <div className="card-menu">
+        <div className="card-menu bg-gray-900 border border-gray-700 shadow-2xl">
           <div className="card-menu-row">
-            <span>
+            <span className="text-white font-semibold text-lg">
               Selected: #{menuCard.id} {menuCard.type}
             </span>
           </div>
           <div className="card-menu-row">
             {menuCard.type === "MONEY" && (
               <button
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 
+                           text-white font-medium px-4 py-2 rounded-lg 
+                           transition-colors duration-200 shadow-md"
                 disabled={!isMyTurn || playsLeft <= 0}
                 onClick={bankSelected}
               >
@@ -534,6 +558,9 @@ const PlayScreen: React.FC = () => {
             )}
             {menuCard.type === "PROPERTY" && !colorChoices && (
               <button
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 
+                           text-white font-medium px-4 py-2 rounded-lg 
+                           transition-colors duration-200 shadow-md"
                 disabled={!isMyTurn || playsLeft <= 0}
                 onClick={() => playPropertySelected()}
               >
@@ -546,12 +573,32 @@ const PlayScreen: React.FC = () => {
               {colorChoices.map((c) => (
                 <button
                   key={c}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 
+                             text-white font-medium px-4 py-2 rounded-lg 
+                             transition-colors duration-200 shadow-md"
                   disabled={!isMyTurn || playsLeft <= 0}
                   onClick={() => playPropertySelected(c)}
                 >
                   Play as {c}
                 </button>
               ))}
+            </div>
+          )}
+          {menuCard.type === "PROPERTY" && (
+            <div className="card-menu-row">
+              <button
+                className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 
+                           text-white font-medium px-4 py-2 rounded-lg 
+                           transition-colors duration-200 shadow-md"
+                disabled={!isMyTurn}
+                onClick={() => {
+                  setShowMovePropertyUI(true);
+                  setMenuCard(null);
+                  setColorChoices(null);
+                }}
+              >
+                Move Property
+              </button>
             </div>
           )}
           <div className="card-menu-row">
@@ -563,6 +610,132 @@ const PlayScreen: React.FC = () => {
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* MoveProperty UI */}
+      {showMovePropertyUI && (
+        <div className="move-property-overlay">
+          <div className="move-property-modal">
+            <div className="move-property-header">
+              <h3>Move Property</h3>
+              <button
+                className="close-btn"
+                onClick={() => {
+                  setShowMovePropertyUI(false);
+                  setSelectedPropertyForMove(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="move-property-content">
+              <div className="property-sets-section">
+                <h4>Your Property Sets</h4>
+                <div className="property-sets-grid">
+                  {game?.playerState[myPID]?.propertyCollection ? (
+                    Object.entries(
+                      game.playerState[myPID].propertyCollection
+                    ).map(([setId, properties]) => (
+                      <div key={setId} className="property-set">
+                        <div className="set-header">
+                          <span className="set-color">
+                            Set {setId.slice(0, 4)}
+                          </span>
+                          <span className="set-count">
+                            {properties.length} cards
+                          </span>
+                        </div>
+                        <div className="set-properties">
+                          {properties.map((property) => (
+                            <div
+                              key={property.id}
+                              className={`property-card ${
+                                selectedPropertyForMove?.id === property.id
+                                  ? "selected"
+                                  : ""
+                              }`}
+                              onClick={() =>
+                                setSelectedPropertyForMove(property)
+                              }
+                            >
+                              <img
+                                src={assetForCard(property)}
+                                alt={`Property ${property.id}`}
+                                className="property-card-img"
+                              />
+                              <div className="card-flip-indicator">
+                                {property.colors && property.colors.length > 1
+                                  ? "🔄"
+                                  : ""}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="no-properties">
+                      No properties in collection
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {selectedPropertyForMove && (
+                <div className="move-actions">
+                  <div className="selected-property">
+                    <h4>Selected: Property #{selectedPropertyForMove.id}</h4>
+                    <div className="property-preview">
+                      <img
+                        src={assetForCard(selectedPropertyForMove)}
+                        alt={`Property ${selectedPropertyForMove.id}`}
+                        className="preview-card"
+                      />
+                      <div className="property-info">
+                        <p>
+                          Colors:{" "}
+                          {selectedPropertyForMove.colors?.join(", ") || "Any"}
+                        </p>
+                        <p>Value: {selectedPropertyForMove.value || "N/A"}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="target-sets">
+                    <h4>Move to Set:</h4>
+                    <div className="target-options">
+                      {game?.playerState[myPID]?.propertyCollection ? (
+                        Object.entries(
+                          game.playerState[myPID].propertyCollection
+                        ).map(([setId, properties]) => (
+                          <button
+                            key={setId}
+                            className="target-set-btn"
+                            onClick={() => {
+                              // Mock implementation - in real version would send MoveProperty action
+                              alert(
+                                `Would move property ${
+                                  selectedPropertyForMove.id
+                                } to Set ${setId.slice(0, 4)}`
+                              );
+                              setShowMovePropertyUI(false);
+                              setSelectedPropertyForMove(null);
+                            }}
+                          >
+                            Set {setId.slice(0, 4)} ({properties.length} cards)
+                          </button>
+                        ))
+                      ) : (
+                        <div>No target sets available</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

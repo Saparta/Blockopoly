@@ -9,7 +9,7 @@ import { useDroppable } from "@dnd-kit/core";
 import backdrop from "@/assets/Backdrop.svg";
 
 import "@/components/mats/mat_styles/playmat_shared.css";
-// import "./mat_styles/Playmat2.css";
+import "./mat_styles/Playmat2.css";
 
 // import { PLAYER_ID_KEY } from "../../constants/constants";
 
@@ -81,13 +81,10 @@ const Playmat2: React.FC<PlaymatProps> = ({
             className={`property-collection-zone droppable ${
               p1PropsOver ? "is-over" : ""
             }`}
+            ref={setP1PropsRef}
+            aria-label={`${nameFor(pidMap.p1)} property collection`}
           >
-            <div
-              className="property-collection"
-              id="p1-properties"
-              ref={setP1PropsRef}
-              aria-label={`${nameFor(pidMap.p1)} property collection`}
-            />
+            <div className="property-collection" id="p1-properties" />
           </div>
 
           <div className="money-collection-bank">
@@ -98,7 +95,13 @@ const Playmat2: React.FC<PlaymatProps> = ({
               aria-label={`${nameFor(pidMap.p1)} bank`}
             />
             {myPID === pidMap.p1 && (
-              <button className="hand-toggle" onClick={openHand("p1")}>
+              <button
+                className="hand-toggle bg-game-gold hover:bg-yellow-400 
+                           text-gray-800 font-medium px-3 py-1 rounded-md 
+                           shadow-md hover:shadow-lg transition-all duration-200
+                           border border-yellow-300"
+                onClick={openHand("p1")}
+              >
                 Hand
               </button>
             )}
@@ -111,13 +114,10 @@ const Playmat2: React.FC<PlaymatProps> = ({
             className={`player-2-property-collection-zone droppable ${
               p2PropsOver ? "is-over" : ""
             }`}
+            ref={setP2PropsRef}
+            aria-label={`${nameFor(pidMap.p2)} property collection`}
           >
-            <div
-              className="property-collection2"
-              id="p2-properties"
-              ref={setP2PropsRef}
-              aria-label={`${nameFor(pidMap.p2)} property collection`}
-            />
+            <div className="property-collection2" id="p2-properties" />
           </div>
 
           <div className="player-2-money-collection-bank">
@@ -128,7 +128,13 @@ const Playmat2: React.FC<PlaymatProps> = ({
               aria-label={`${nameFor(pidMap.p2)} bank`}
             />
             {myPID === pidMap.p2 && (
-              <button className="hand-toggle" onClick={openHand("p2")}>
+              <button
+                className="hand-toggle bg-game-gold hover:bg-yellow-400 
+                           text-gray-800 font-medium px-3 py-1 rounded-md 
+                           shadow-md hover:shadow-lg transition-all duration-200
+                           border border-yellow-300"
+                onClick={openHand("p2")}
+              >
                 Hand
               </button>
             )}

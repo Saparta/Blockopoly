@@ -172,7 +172,18 @@
   position: relative;
   z-index: 5;
   pointer-events: auto;
+  transition: outline-color 120ms ease, background 120ms ease,
+    transform 120ms ease, box-shadow 120ms ease;
+  border-radius: 8px;
 }
+
+.droppable.is-over {
+  outline: 3px dashed rgba(74, 144, 226, 0.8);
+  background: rgba(74, 144, 226, 0.1);
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
+}
+
 .backdrop {
   z-index: -1;
 }
@@ -186,14 +197,28 @@
   background: #ffe58a;
   border-radius: 0.25rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: background-color 200ms ease;
 }
 
-.droppable {
-  transition: outline-color 120ms ease, background 120ms ease,
-    transform 120ms ease;
+.hand-toggle:hover {
+  background: #ffd700;
 }
-.droppable.is-over {
-  outline: 2px dashed rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.06);
-  transform: scale(1.02);
+
+/* Enhanced droppable zone styling for better visibility */
+.property-collection-zone.droppable,
+.player-2-property-collection-zone.droppable {
+  min-height: 100px;
+  min-width: 100px;
+}
+
+.bank-pile.droppable,
+.bank-pile2.droppable {
+  min-height: 80px;
+  min-width: 80px;
+}
+
+.discard-pile.droppable {
+  min-height: 120px;
+  min-width: 80px;
 }
